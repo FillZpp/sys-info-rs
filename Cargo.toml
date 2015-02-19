@@ -12,7 +12,17 @@ description = """
 Get system information in Rust.
 """
 
-[dependencies.info]
-path = "info"
-version = "*"
+links = "info"
+build = "build.rs"
+
+[lib]
+name = "sys-info"
+path = "lib.rs"
+
+[dependencies]
+libc = "*"
+
+[build-dependencies]
+gcc = "*"
+
 
