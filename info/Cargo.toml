@@ -1,0 +1,19 @@
+[package]
+
+name = "info"
+version = "0.0.1"
+authors = ["Siyu Wang <FillZpp.pub@gmail.com>"]
+
+links = "info"
+build = "build.rs"
+
+[lib]
+name = "info"
+path = "lib.rs"
+
+[dependencies]
+libc = "*"
+
+[build-dependencies]
+gcc = "*"
+
