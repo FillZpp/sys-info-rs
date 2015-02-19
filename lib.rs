@@ -1,6 +1,8 @@
 #![feature(core)]
 #![feature(std_misc)]
+extern crate libc;
 use std::ffi;
+use libc::{c_char, c_uint, c_ulonglong};
 
 #[repr(C)]
 pub struct LoadAvg {
@@ -29,15 +31,15 @@ pub struct DiskInfo {
 }
 
 extern {
-    fn get_os_type() -> *const i8;
-    fn get_os_release() -> *const i8;
+    fn get_os_type() -> *const c_char;
+    fn get_os_release() -> *const c_char;
 
-    fn get_cpu_num() -> u32;
-    fn get_cpu_physical_num() -> u32;
-    fn get_cpu_speed() -> u64;
+    fn get_cpu_num() -> c_uint;
+    fn get_cpu_physical_num() -> c_uint;
+    fn get_cpu_speed() -> c_ulonglong;
 
     fn get_loadavg() -> LoadAvg;
-    fn get_proc_total() -> u32;
+    fn get_proc_total() -> c_uint;
 
     fn get_mem_info() -> MemInfo;
     fn get_disk_info() -> DiskInfo;
