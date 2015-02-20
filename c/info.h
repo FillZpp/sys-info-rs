@@ -21,18 +21,17 @@ typedef struct MemInfo {
 
 typedef struct DiskInfo {
         double total;
-        double avail;
+        double free;
 } DiskInfo;
 
-char *get_os_type(void);
-char *get_os_release(void);
+const char *get_os_type(void);
+const char *get_os_release(void);
 
 unsigned int get_cpu_num(void);
-unsigned int get_cpu_physical_num(void);
-unsigned long long get_cpu_speed(void);
+unsigned long get_cpu_speed(void);
 
 LoadAvg get_loadavg(void);
-unsigned int get_proc_total(void);
+unsigned long get_proc_total(void);
 
 MemInfo get_mem_info(void);
 DiskInfo get_disk_info(void);

@@ -2,7 +2,7 @@
 #![feature(std_misc)]
 extern crate libc;
 use std::ffi;
-use libc::{c_char, c_uint, c_ulonglong};
+use libc::{c_char, c_uint, c_ulong};
 
 #[repr(C)]
 pub struct LoadAvg {
@@ -27,7 +27,7 @@ pub struct MemInfo {
 #[repr(C)]
 pub struct DiskInfo {
     pub total: f64,
-    pub avail: f64
+    pub free: f64
 }
 
 extern {
@@ -35,11 +35,10 @@ extern {
     fn get_os_release() -> *const c_char;
 
     fn get_cpu_num() -> c_uint;
-    fn get_cpu_physical_num() -> c_uint;
-    fn get_cpu_speed() -> c_ulonglong;
+    fn get_cpu_speed() -> c_ulong;
 
     fn get_loadavg() -> LoadAvg;
-    fn get_proc_total() -> c_uint;
+    fn get_proc_total() -> c_ulong;
 
     fn get_mem_info() -> MemInfo;
     fn get_disk_info() -> DiskInfo;
@@ -83,17 +82,6 @@ pub fn cpu_num() -> Result<u32, String> {
     }
 }
 
-pub fn cpu_physical_num() -> Result<u32, String> {
-    if cfg!(target_os = "linux") {
-        // TODO
-        Ok(2) 
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        Ok(unsafe { get_cpu_physical_num() })
-    } else {
-        Err("Unsupported system".to_string())
-    }
-}
-
 pub fn cpu_speed() -> Result<u64, String> {
     if cfg!(target_os = "linux") {
         // TODO
@@ -116,7 +104,7 @@ pub fn loadavg() -> Result<LoadAvg, String> {
     }
 }
 
-pub fn proc_total() -> Result<u32, String> {
+pub fn proc_total() -> Result<u64, String> {
     if cfg!(target_os = "linux") {
             // TODO
             Ok(100)
@@ -155,7 +143,14 @@ pub fn disk_info() -> Result<DiskInfo, String> {
 fn test() {
     assert_eq!("Darwin", os_type().unwrap());
     assert_eq!("14.1.0", os_release().unwrap());
+    
     assert_eq!(4, cpu_num().unwrap());
-    assert_eq!(2, cpu_physical_num().unwrap());
+    cpu_speed();
+
+    loadavg();
+    proc_total();
+
+    mem_info();
+    disk_info();
 }
 

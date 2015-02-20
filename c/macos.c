@@ -20,7 +20,7 @@ static char *makenetvfslist(void);
 static int skipvfs;
 
 /* Get information */
-char *get_os_type(void) {
+const char *get_os_type(void) {
 	char *s, buf[LEN];
 	size_t len;
 	int mib[2];
@@ -37,7 +37,7 @@ char *get_os_type(void) {
 	return s;
 }
 
-char *get_os_release(void) {
+const char *get_os_release(void) {
 	char *s, buf[LEN];
 	size_t len;
 	int mib[2];
@@ -65,22 +65,11 @@ unsigned int get_cpu_num(void) {
 
 	if (sysctl(mib, 2, &num, &len, NULL, 0) == -1 || !len)
 		num = 1;
-	
+
 	return num;
 }
 
-unsigned int get_cpu_physical_num(void) {
-	unsigned int num;
-	size_t len;
-	
-	len = sizeof(num);
-	if (sysctlbyname("hw.physicalcpu", &num, &len, NULL, 0) == -1 || !len)
-		num = 1;
-	
-	return num;
-}
-
-unsigned long long get_cpu_speed(void) {
+unsigned long get_cpu_speed(void) {
 	unsigned long speed;
 	int mib[2];
 	size_t len;
@@ -107,7 +96,7 @@ LoadAvg get_loadavg(void) {
 	return la;
 }
 
-unsigned int get_proc_total(void) {
+unsigned long get_proc_total(void) {
 	int mib[3];
 	size_t len;
 
@@ -135,6 +124,7 @@ MemInfo get_mem_info(void) {
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		size /= 1024;
 	}
+	
 	host_statistics(mach_host_self(), HOST_VM_INFO,
 				(host_info_t)&vm_stat, &count);
 
@@ -146,7 +136,7 @@ MemInfo get_mem_info(void) {
 	mi.swap_total  = 0;
 	mi.swap_free   = 0;
 
-return mi;
+	return mi;
 }
 
 DiskInfo get_disk_info(void) {
@@ -162,7 +152,7 @@ DiskInfo get_disk_info(void) {
 	float most_full = 0.0;
 
 	di.total = 0.0;
-	di.avail = 0.0;
+	di.free = 0.0;
 
 	str = makenetvfslist();
 	vfslist = makevfslist(str);
@@ -181,7 +171,7 @@ DiskInfo get_disk_info(void) {
 				most_full = pct;
 			toru = reported_units / mntbuf[i].f_bsize;
 			di.total += mntbuf[i].f_blocks / toru;
-			di.avail += mntbuf[i].f_bavail / toru;
+			di.free += mntbuf[i].f_bavail / toru;
 		}
 	}
 
@@ -189,8 +179,7 @@ DiskInfo get_disk_info(void) {
 	return di;
 }
 
-/* Internal */
-
+/* Internal definitions */
 const char **makevfslist(char *fslist) {
 	const char **av;
 	int i;
