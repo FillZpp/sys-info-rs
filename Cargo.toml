@@ -19,9 +19,6 @@ build = "build.rs"
 name = "sys-info"
 path = "lib.rs"
 
-[dependencies]
-libc = "*"
-
 [build-dependencies]
 gcc = "*"
 

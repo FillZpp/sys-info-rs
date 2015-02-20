@@ -9,8 +9,8 @@ typedef struct LoadAvg {
 
 typedef struct MemInfo {
         unsigned long long total;
-        unsigned long long avail;
         unsigned long long free;
+        unsigned long long avail;
 
         unsigned long long buffers;
         unsigned long long cached;

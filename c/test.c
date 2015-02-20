@@ -15,7 +15,7 @@ int main(void) {
 
 	MemInfo mi = get_mem_info();
 	printf("\nmem:\ntotal %llu, avail %llu, free %llu\n",
-	       mi.total, mi.avail, mi.free);
+	     mi.total, mi.avail, mi.free);
 	printf("buffers %llu, cached %llu\n", mi.buffers, mi.cached);
 	printf("swap: total %llu, free %llu\n", mi.swap_total, mi.swap_free);
 
