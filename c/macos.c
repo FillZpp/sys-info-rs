@@ -169,8 +169,6 @@ DiskInfo get_disk_info(void) {
 			toru = reported_units / mntbuf[i].f_bsize;
 			dtotal += mntbuf[i].f_blocks / toru;
 			dfree += mntbuf[i].f_bavail / toru;
-			printf("-total: %f, free: %f\n", mntbuf[i].f_blocks / toru,
-				mntbuf[i].f_bavail / toru);
 		}
 	}
 

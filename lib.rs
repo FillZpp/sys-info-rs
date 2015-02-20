@@ -2,6 +2,14 @@
 #![feature(std_misc)]
 #![feature(fs)]
 #![feature(io)]
+
+//! #Introduction
+//! **This crate focuses on geting system information.**
+//!
+//! Now it can get kernel and cpu information, memory and disk usage, average load value and so on.
+//!
+//! If you have some advice or want the crate supports more system information, contact with me.
+
 use std::ffi;
 use std::io::Read;
 use std::fs::File;
@@ -50,6 +58,7 @@ extern {
 }
 
 /// Get operation system type.
+///
 /// Such as "Linux", "Darwin", "Windows".
 pub fn os_type() -> Result<String, String> {
     if cfg!(target_os = "linux") {
@@ -71,6 +80,7 @@ pub fn os_type() -> Result<String, String> {
 }
 
 /// Get operation system release version.
+///
 /// Such as "3.19.0-gentoo"
 pub fn os_release() -> Result<String, String> {
     if cfg!(target_os = "linux") {
@@ -92,6 +102,7 @@ pub fn os_release() -> Result<String, String> {
 }
 
 /// Get cpu num quantity.
+///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, String> {
     if cfg!(target_os = "linux")
@@ -104,6 +115,7 @@ pub fn cpu_num() -> Result<u32, String> {
 }
 
 /// Get cpu speed.
+///
 /// Such as 2500, that is 2500 MHz.
 pub fn cpu_speed() -> Result<u64, String> {
     if cfg!(target_os = "linux") {
@@ -124,6 +136,7 @@ pub fn cpu_speed() -> Result<u64, String> {
 }
 
 /// Get system load average value.
+///
 /// Notice, on windows, one/five/fifteen of the LoadAvg returned are the current load.
 pub fn loadavg() -> Result<LoadAvg, String> {
     if cfg!(target_os = "linux") {
@@ -143,6 +156,7 @@ pub fn loadavg() -> Result<LoadAvg, String> {
 }
 
 /// Get current processes quantity.
+///
 /// Notice, it temporarily does not support Windows.
 pub fn proc_total() -> Result<u64, String> {
     if cfg!(target_os = "linux") {
@@ -175,6 +189,7 @@ fn get_mem_num(line: &str) -> u64 {
 }
 
 /// Get memory information.
+///
 /// On Mac OS X and Windows, the buffers and cached variables of the MemInfo returned are zero.
 pub fn mem_info() -> Result<MemInfo, String> {
     if cfg!(target_os = "linux") {
@@ -206,6 +221,7 @@ pub fn mem_info() -> Result<MemInfo, String> {
 }
 
 /// Get disk information.
+///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, String> {
     if cfg!(target_os = "linux") ||
