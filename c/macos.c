@@ -10,7 +10,7 @@
 #define LEN 20
 #define MNT_IGNORE 0
 
-/* Internal Definitions */
+/* Internal Declarations */
 static size_t regetmntinfo(struct statfs **mntbufp,
 			   long mntsize, const char **vfslist);
 static const char **makevfslist(char *fslist);
