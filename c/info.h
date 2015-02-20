@@ -20,8 +20,8 @@ typedef struct MemInfo {
 } MemInfo;
 
 typedef struct DiskInfo {
-        double total;
-        double free;
+        unsigned long long total;
+        unsigned long long free;
 } DiskInfo;
 
 const char *get_os_type(void);

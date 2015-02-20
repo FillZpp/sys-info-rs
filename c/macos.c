@@ -147,12 +147,9 @@ DiskInfo get_disk_info(void) {
 	size_t i, mntsize;
 	size_t used, availblks;
 	const double reported_units = 1e9;
-	double toru;
 	float pct;
 	float most_full = 0.0;
-
-	di.total = 0.0;
-	di.free = 0.0;
+	double toru, dtotal = 0.0, dfree = 0.0;
 
 	str = makenetvfslist();
 	vfslist = makevfslist(str);
@@ -161,7 +158,7 @@ DiskInfo get_disk_info(void) {
 	mntsize = getmntinfo(&mntbuf, MNT_NOWAIT);
 	mntsize = regetmntinfo(&mntbuf, mntsize, vfslist);
 
-	for (i = 0; i < mntsize; i++) {
+	for (i = 0; i < mntsize-1; i++) {
 		if ((mntbuf[i].f_flags & MNT_IGNORE) == 0) {
 			used = mntbuf[i].f_blocks - mntbuf[i].f_bfree;
 			availblks = mntbuf[i].f_bavail + used;
@@ -170,12 +167,16 @@ DiskInfo get_disk_info(void) {
 			if (pct > most_full)
 				most_full = pct;
 			toru = reported_units / mntbuf[i].f_bsize;
-			di.total += mntbuf[i].f_blocks / toru;
-			di.free += mntbuf[i].f_bavail / toru;
+			dtotal += mntbuf[i].f_blocks / toru;
+			dfree += mntbuf[i].f_bavail / toru;
+			printf("-total: %f, free: %f\n", mntbuf[i].f_blocks / toru,
+				mntbuf[i].f_bavail / toru);
 		}
 	}
 
 	free(vfslist);
+	di.total = dtotal * 1000000;
+	di.free = dfree * 1000000;
 	return di;
 }
 
