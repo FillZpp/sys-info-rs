@@ -17,14 +17,18 @@ use std::fs::File;
 /// System load average value.
 #[repr(C)]
 pub struct LoadAvg {
+    /// Average load value within one minite.
     pub one: f64,
+    /// Average load value within five minites.
     pub five: f64,
+    /// Average load value within fifteen minites.
     pub fifteen: f64
 }
 
 /// System memory information.
 #[repr(C)]
 pub struct MemInfo {
+    /// Total physical memory.
     pub total: u64,
     pub free:  u64,
     pub avail: u64,
@@ -32,6 +36,7 @@ pub struct MemInfo {
     pub buffers: u64,
     pub cached:  u64,
 
+    /// Total swap memory.
     pub swap_total: u64,
     pub swap_free:  u64
 }
