@@ -120,14 +120,19 @@ pub fn cpu_num() -> Result<u32, String> {
 pub fn cpu_speed() -> Result<u64, String> {
     if cfg!(target_os = "linux") {
         // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
-        let mut f =
-            File::open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq")
-            .unwrap();
+        let mut f = File::open("/proc/cpuinfo").unwrap();
         let mut s = String::new();
         let _ = f.read_to_string(&mut s).unwrap();
-        s.pop();
-        let n = s.as_slice().parse::<u64>().unwrap();
-        Ok(n / 1000)
+        let mut lines = s.as_slice().split('\n');
+        Ok({
+            for _ in 0..7 {
+                lines.next();
+            }
+            let mut words = lines.next().unwrap().split(':');
+            words.next();
+            let s = words.next().unwrap().trim().trim_right_matches('\n');
+            s.parse::<f64>().unwrap() as u64
+        })
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_cpu_speed() })
     } else {
