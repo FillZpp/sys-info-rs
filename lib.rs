@@ -241,14 +241,42 @@ pub fn disk_info() -> Result<DiskInfo, String> {
 
 
 #[test]
-fn test() {
+fn test_os_type() {
     os_type().unwrap();
+}
+
+#[test]
+fn test_os_release() {
     os_release().unwrap();
+}
+
+#[test]
+fn test_cpu_num() {
     cpu_num().unwrap();
+}
+
+#[test]
+fn test_cpu_speed() {
     cpu_speed().unwrap();
+}
+
+#[test]
+fn test_loadavg() {
     loadavg().unwrap();
+}
+
+#[test]
+fn test_proc_total() {
     proc_total().unwrap();
+}
+
+#[test]
+fn test_mem_info() {
     mem_info().unwrap();
+}
+
+#[test]
+fn test_disk_info() {
     disk_info().unwrap();
 }
 
