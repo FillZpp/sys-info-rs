@@ -71,8 +71,8 @@ pub fn os_type() -> Result<String, String> {
         cfg!(target_os = "windows")
     {
         Ok(unsafe {
-            let s = get_os_type();
-            String::from_utf8_lossy(ffi::c_str_to_bytes(&s)).into_owned()
+            let p = get_os_type();
+            String::from_utf8_lossy(ffi::CStr::from_ptr(p).to_bytes()).into_owned()
         })
     } else {
         Err("Unsupported system".to_string())
@@ -93,8 +93,8 @@ pub fn os_release() -> Result<String, String> {
         cfg!(target_os = "windows")
     {
         Ok(unsafe {
-            let s = get_os_release();
-            String::from_utf8_lossy(ffi::c_str_to_bytes(&s)).into_owned()
+            let p = get_os_release();
+            String::from_utf8_lossy(ffi::CStr::from_ptr(p).to_bytes()).into_owned()
         })
     } else {
         Err("Unsupported system".to_string())
