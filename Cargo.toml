@@ -1,13 +1,12 @@
 [package]
 
-name = "sys-info-rs"
+name = "sys-info"
 version = "0.1.1"
-authors = ["Siyu Wang <FillZpp.pub@gmail.com"]
+authors = ["Siyu Wang <FillZpp.pub@gmail.com>"]
 license = "MIT"
-
 readme = "README.md"
 repository = "https://github.com/FillZpp/sys-info-rs"
-homepage = "https://github.com/FillZpp/sys-info-rs"
+documentation = "http://docs.fillzpp.org/sys-info-rs/sys-info/"
 description = """
 Get system information in Rust.
 """
