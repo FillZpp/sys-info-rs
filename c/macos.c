@@ -71,14 +71,10 @@ unsigned int get_cpu_num(void) {
 
 unsigned long get_cpu_speed(void) {
 	unsigned long speed;
-	int mib[2];
 	size_t len;
-
-	mib[0] = CTL_HW;
-	mib[1] = HW_CPU_FREQ;
+	
 	len = sizeof(speed);
-
-	sysctl(mib, 2, &speed, &len, NULL, 0);
+	sysctlbyname("hw.cpufrequency", &speed, &len, NULL, 0);
 	speed /= 1000000;
 
 	return speed;
