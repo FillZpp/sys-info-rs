@@ -1,7 +1,7 @@
 [package]
 
 name = "sys-info"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Siyu Wang <FillZpp.pub@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -9,6 +9,7 @@ repository = "https://github.com/FillZpp/sys-info-rs"
 documentation = "http://docs.fillzpp.org/sys-info-rs/sys-info/"
 description = """
 Get system information in Rust.
+For now it supports Linux, Mac OS X and Windows.
 """
 
 links = "info"

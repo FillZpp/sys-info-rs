@@ -4,11 +4,12 @@
 #![feature(io)]
 
 //! #Introduction
-//! **This crate focuses on geting system information.**
+//! This crate focuses on geting system information.
 //!
-//! Now it can get kernel and cpu information, memory and disk usage, average load value and so on.
+//! For now it supports Linux, Mac OS X and Windows.
+//! And now it can get kernel and cpu information, memory and disk usage, average load value and so on.
 //!
-//! If you have some advice or want the crate supports more system information, contact with me.
+//! If you have some advice or wish this crate supports more system or information, contact with me.
 
 use std::ffi;
 use std::io::Read;
