@@ -7,7 +7,7 @@
 //! This crate focuses on geting system information.
 //!
 //! For now it supports Linux, Mac OS X and Windows.
-//! And now it can get kernel and cpu information, memory and disk usage, average load value and so on.
+//! And now it can get information of kernel/cpu/memory/disk/load and so on.
 //!
 //! If you have some advice or wish this crate supports more system or information, contact with me.
 

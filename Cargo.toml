@@ -5,6 +5,7 @@ version = "0.1.3"
 authors = ["Siyu Wang <FillZpp.pub@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+keywords = ["system", "information", "cpu", "disk", "memory"]
 repository = "https://github.com/FillZpp/sys-info-rs"
 documentation = "http://docs.fillzpp.org/sys-info-rs/sys-info/"
 description = """
