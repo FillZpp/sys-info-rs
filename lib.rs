@@ -245,6 +245,7 @@ pub fn disk_info() -> Result<DiskInfo, String> {
     }
 }
 
+/// Get hostname.
 pub fn hostname() -> Result<String, String> {
     use std::process::Command;
     if cfg!(unix) {
