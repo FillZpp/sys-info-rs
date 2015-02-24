@@ -13,5 +13,6 @@ fn main() {
     println!("swap: total {} KB, free {} KB", mem.swap_total, mem.swap_free);
     let disk = sys_info::disk_info().unwrap();
     println!("disk: total {} KB, free {} KB", disk.total, disk.free);
+    println!("hostname: {}", sys_info::hostname().unwrap());
 
 }

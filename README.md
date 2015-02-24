@@ -3,7 +3,7 @@
 Get system information in Rust.
 
 For now it supports Linux, Mac OS X and Windows.
-And now it can get information of kernel/cpu/memory/disk/load and so on.
+And now it can get information of kernel/cpu/memory/disk/load/hostname and so on.
 
 [Documentation](http://docs.fillzpp.org/sys-info-rs/sys-info)
 

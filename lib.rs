@@ -2,14 +2,14 @@
 #![feature(std_misc)]
 #![feature(fs)]
 #![feature(io)]
+#![feature(process)]
 
 //! #Introduction
 //! This crate focuses on geting system information.
 //!
 //! For now it supports Linux, Mac OS X and Windows.
-//! And now it can get information of kernel/cpu/memory/disk/load and so on.
+//! And now it can get information of kernel/cpu/memory/disk/load/hostname and so on.
 //!
-//! If you have some advice or wish this crate supports more system or information, contact with me.
 
 use std::ffi;
 use std::io::Read;
@@ -18,11 +18,11 @@ use std::fs::File;
 /// System load average value.
 #[repr(C)]
 pub struct LoadAvg {
-    /// Average load value within one minite.
+    /// Average load within one minite.
     pub one: f64,
-    /// Average load value within five minites.
+    /// Average load within five minites.
     pub five: f64,
-    /// Average load value within fifteen minites.
+    /// Average load within fifteen minites.
     pub fifteen: f64
 }
 
@@ -245,44 +245,27 @@ pub fn disk_info() -> Result<DiskInfo, String> {
     }
 }
 
-
-#[test]
-fn test_os_type() {
-    os_type().unwrap();
+pub fn hostname() -> Result<String, String> {
+    use std::process::Command;
+    if cfg!(unix) {
+        let output = match Command::new("hostname").output() {
+            Ok(o)  => o,
+            Err(e) => return Err(format!("failed to execute process: {}", e)),
+        };
+        let mut s = String::from_utf8(output.stdout).unwrap();
+        s.pop();  // pop '\n'
+        Ok(s)
+    } else if cfg!(windows) {
+        let output = match Command::new("hostname").output() {
+            Ok(o)  => o,
+            Err(e) => return Err(format!("failed to execute process: {}", e)),
+        };
+        let mut s = String::from_utf8(output.stdout).unwrap();
+        s.pop();  // pop '\n'
+        Ok(s)
+    } else {
+        Err("Unsupported system".to_string())
+    }
 }
 
-#[test]
-fn test_os_release() {
-    os_release().unwrap();
-}
-
-#[test]
-fn test_cpu_num() {
-    cpu_num().unwrap();
-}
-
-#[test]
-fn test_cpu_speed() {
-    cpu_speed().unwrap();
-}
-
-#[test]
-fn test_loadavg() {
-    loadavg().unwrap();
-}
-
-#[test]
-fn test_proc_total() {
-    proc_total().unwrap();
-}
-
-#[test]
-fn test_mem_info() {
-    mem_info().unwrap();
-}
-
-#[test]
-fn test_disk_info() {
-    disk_info().unwrap();
-}
 
