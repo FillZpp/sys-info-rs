@@ -12,8 +12,23 @@
 //!
 
 use std::ffi;
+use std::str;
 use std::io::Read;
 use std::fs::File;
+use std::sync::{Once, ONCE_INIT};
+
+static mut OS_TYPE: &'static str = "";
+static OS_TYPE_INIT: Once = ONCE_INIT;
+
+static mut OS_RELEASE: &'static str = "";
+static OS_RELEASE_INIT: Once = ONCE_INIT;
+
+static mut CPU_NUM: u32 = 0;
+static CPU_NUM_INIT: Once = ONCE_INIT;
+
+static mut CPU_SPEED: u64 = 0;
+static CPU_SPEED_INIT: Once = ONCE_INIT;
+
 
 /// System load average value.
 #[repr(C)]
@@ -67,19 +82,22 @@ extern {
 ///
 /// Such as "Linux", "Darwin", "Windows".
 pub fn os_type() -> Result<String, String> {
-    if cfg!(target_os = "linux") {
-        let mut f = File::open("/proc/sys/kernel/ostype").unwrap();
-        let mut s = String::new();
-        let _ = f.read_to_string(&mut s).unwrap();
-        s.pop();  // pop '\n'
-        Ok(s)
-    } else if cfg!(target_os = "macos") ||
-        cfg!(target_os = "windows")
-    {
-        Ok(unsafe {
-            let p = get_os_type();
-            String::from_utf8_lossy(ffi::CStr::from_ptr(p).to_bytes()).into_owned()
-        })
+    if cfg!(unix) || cfg!(windows) {
+        unsafe {
+            OS_TYPE_INIT.call_once(|| {
+                if cfg!(target_os = "linux") {
+                    let mut f = File::open("/proc/sys/kernel/ostype").unwrap();
+                    let mut s = String::new();
+                    let _ = f.read_to_string(&mut s).unwrap();
+                    s.pop();  // pop '\n'
+                    std::mem::copy_lifetime(OS_TYPE, s.as_slice());
+                } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+                    OS_TYPE = str::from_utf8(
+                        ffi::CStr::from_ptr(get_os_type()).to_bytes()).unwrap();
+                } 
+            });
+            Ok(OS_TYPE.to_string())
+        }
     } else {
         Err("Unsupported system".to_string())
     }
@@ -89,19 +107,22 @@ pub fn os_type() -> Result<String, String> {
 ///
 /// Such as "3.19.0-gentoo"
 pub fn os_release() -> Result<String, String> {
-    if cfg!(target_os = "linux") {
-        let mut f = File::open("/proc/sys/kernel/osrelease").unwrap();
-        let mut s = String::new();
-        let _ = f.read_to_string(&mut s).unwrap();
-        s.pop();
-        Ok(s)
-    } else if cfg!(target_os = "macos") ||
-        cfg!(target_os = "windows")
-    {
-        Ok(unsafe {
-            let p = get_os_release();
-            String::from_utf8_lossy(ffi::CStr::from_ptr(p).to_bytes()).into_owned()
-        })
+    if cfg!(unix) || cfg!(windows) {
+        unsafe {
+            OS_RELEASE_INIT.call_once(|| {
+                if cfg!(target_os = "linux") {
+                    let mut f = File::open("/proc/sys/kernel/osrelease").unwrap();
+                    let mut s = String::new();
+                    let _ = f.read_to_string(&mut s).unwrap();
+                    s.pop();
+                    std::mem::copy_lifetime(OS_RELEASE, s.as_slice());
+                } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+                    OS_RELEASE = str::from_utf8(
+                        ffi::CStr::from_ptr(get_os_release()).to_bytes()).unwrap();
+                }
+            });
+            Ok(OS_RELEASE.to_string())
+        }
     } else {
         Err("Unsupported system".to_string())
     }
@@ -111,10 +132,13 @@ pub fn os_release() -> Result<String, String> {
 ///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, String> {
-    if cfg!(target_os = "linux")
-        || cfg!(target_os = "macos") || cfg!(target_os = "windows")
-    {
-        Ok(unsafe { get_cpu_num() })
+    if cfg!(unix) || cfg!(windows) {
+        unsafe {
+            CPU_NUM_INIT.call_once(|| {
+                CPU_NUM = get_cpu_num();
+            });
+            Ok(CPU_NUM)
+        }
     } else {
         Err("Unsupported system".to_string())
     }
@@ -124,23 +148,28 @@ pub fn cpu_num() -> Result<u32, String> {
 ///
 /// Such as 2500, that is 2500 MHz.
 pub fn cpu_speed() -> Result<u64, String> {
-    if cfg!(target_os = "linux") {
-        // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
-        let mut f = File::open("/proc/cpuinfo").unwrap();
-        let mut s = String::new();
-        let _ = f.read_to_string(&mut s).unwrap();
-        let mut lines = s.as_slice().split('\n');
-        Ok({
-            for _ in 0..7 {
-                lines.next();
-            }
-            let mut words = lines.next().unwrap().split(':');
-            words.next();
-            let s = words.next().unwrap().trim().trim_right_matches('\n');
-            s.parse::<f64>().unwrap() as u64
-        })
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        Ok(unsafe { get_cpu_speed() })
+    if cfg!(unix) || cfg!(windows) {
+        unsafe {
+            CPU_SPEED_INIT.call_once(|| {
+                CPU_SPEED = if cfg!(target_os = "linux") {
+                    // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
+                    let mut f = File::open("/proc/cpuinfo").unwrap();
+                    let mut s = String::new();
+                    let _ = f.read_to_string(&mut s).unwrap();
+                    let mut lines = s.as_slice().split('\n');
+                    for _ in 0..7 {
+                        lines.next();
+                    }
+                    let mut words = lines.next().unwrap().split(':');
+                    words.next();
+                    let s = words.next().unwrap().trim().trim_right_matches('\n');
+                    s.parse::<f64>().unwrap() as u64
+                } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+                    get_cpu_speed()
+                } else { 0 };
+            });
+            Ok(CPU_SPEED)
+        }
     } else {
         Err("Unsupported system".to_string())
     }
