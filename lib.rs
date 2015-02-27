@@ -16,19 +16,7 @@ use std::str;
 use std::io::Read;
 use std::fs::File;
 use std::sync::{Once, ONCE_INIT};
-
-static mut OS_TYPE: &'static str = "";
-static OS_TYPE_INIT: Once = ONCE_INIT;
-
-static mut OS_RELEASE: &'static str = "";
-static OS_RELEASE_INIT: Once = ONCE_INIT;
-
-static mut CPU_NUM: u32 = 0;
-static CPU_NUM_INIT: Once = ONCE_INIT;
-
-static mut CPU_SPEED: u64 = 0;
-static CPU_SPEED_INIT: Once = ONCE_INIT;
-
+use std::mem;
 
 /// System load average value.
 #[repr(C)]
@@ -82,6 +70,8 @@ extern {
 ///
 /// Such as "Linux", "Darwin", "Windows".
 pub fn os_type() -> Result<String, String> {
+    static mut OS_TYPE: &'static str = "";
+    static OS_TYPE_INIT: Once = ONCE_INIT;
     if cfg!(unix) || cfg!(windows) {
         unsafe {
             OS_TYPE_INIT.call_once(|| {
@@ -90,11 +80,12 @@ pub fn os_type() -> Result<String, String> {
                     let mut s = String::new();
                     let _ = f.read_to_string(&mut s).unwrap();
                     s.pop();  // pop '\n'
-                    std::mem::copy_lifetime(OS_TYPE, s.as_slice());
+                    OS_TYPE = mem::copy_lifetime(OS_TYPE, s.as_slice());
+                    mem::forget(s);
                 } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-                    OS_TYPE = str::from_utf8(
-                        ffi::CStr::from_ptr(get_os_type()).to_bytes()).unwrap();
-                } 
+                    OS_TYPE = str::from_utf8(ffi::CStr::from_ptr(get_os_type())
+                                   .to_bytes()).unwrap()
+                }
             });
             Ok(OS_TYPE.to_string())
         }
@@ -107,6 +98,8 @@ pub fn os_type() -> Result<String, String> {
 ///
 /// Such as "3.19.0-gentoo"
 pub fn os_release() -> Result<String, String> {
+    static mut OS_RELEASE: &'static str = "";
+    static OS_RELEASE_INIT: Once = ONCE_INIT;
     if cfg!(unix) || cfg!(windows) {
         unsafe {
             OS_RELEASE_INIT.call_once(|| {
@@ -115,7 +108,8 @@ pub fn os_release() -> Result<String, String> {
                     let mut s = String::new();
                     let _ = f.read_to_string(&mut s).unwrap();
                     s.pop();
-                    std::mem::copy_lifetime(OS_RELEASE, s.as_slice());
+                    OS_RELEASE = std::mem::copy_lifetime(OS_RELEASE, s.as_slice());
+                    mem::forget(s);
                 } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
                     OS_RELEASE = str::from_utf8(
                         ffi::CStr::from_ptr(get_os_release()).to_bytes()).unwrap();
@@ -132,6 +126,8 @@ pub fn os_release() -> Result<String, String> {
 ///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, String> {
+    static mut CPU_NUM: u32 = 0;
+    static CPU_NUM_INIT: Once = ONCE_INIT;
     if cfg!(unix) || cfg!(windows) {
         unsafe {
             CPU_NUM_INIT.call_once(|| {
@@ -148,6 +144,8 @@ pub fn cpu_num() -> Result<u32, String> {
 ///
 /// Such as 2500, that is 2500 MHz.
 pub fn cpu_speed() -> Result<u64, String> {
+    static mut CPU_SPEED: u64 = 0;
+    static CPU_SPEED_INIT: Once = ONCE_INIT;
     if cfg!(unix) || cfg!(windows) {
         unsafe {
             CPU_SPEED_INIT.call_once(|| {
