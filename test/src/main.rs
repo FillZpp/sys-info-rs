@@ -1,6 +1,10 @@
+#![feature(test)]
+
 extern crate "sys-info" as sys_info;
+extern crate test;
 
 use sys_info::*;
+use test::Bencher;
 
 fn main() {
 
@@ -18,3 +22,14 @@ fn main() {
     println!("hostname: {}", hostname().unwrap());
 
 }
+
+#[bench]
+fn bench_test(b: &mut Bencher) {
+    b.iter(|| {
+        let _ = loadavg();
+        let _ = mem_info();
+        let _ = disk_info();
+    });
+}
+    
+
