@@ -7,6 +7,7 @@ fn main() {
         gcc::compile_library("libinfo.a", &["c/macos.c"]);
     } else if cfg!(target_os = "windows") {
         gcc::compile_library("libinfo.a", &["c/windows.c"]);
+        println!("cargo:rustc-flags=-l psapi");
     } else {
         panic!("Unsupported system");
     }
