@@ -78,13 +78,11 @@ LoadAvg get_loadavg(void) {
 unsigned long get_proc_total(void) {
 	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses;
 
-	// FIXME
-	/*if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
+	if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
 		cprocesses = 0;
 	else
 		cprocesses = cb_needed / sizeof(unsigned long);
-	return cprocesses;*/
-	return 0;
+	return cprocesses;
 }
 
 MemInfo get_mem_info(void) {

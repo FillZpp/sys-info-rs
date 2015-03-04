@@ -1,7 +1,7 @@
 [package]
 
 name = "sys-info"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Siyu Wang <FillZpp.pub@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -18,7 +18,7 @@ links = "info"
 build = "build.rs"
 
 [lib]
-name = "sys-info"
+name = "sys_info"
 path = "lib.rs"
 
 [build-dependencies]
