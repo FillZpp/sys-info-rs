@@ -1,6 +1,6 @@
 #![feature(test)]
 
-extern crate sys_info;
+extern crate "sys-info" as sys_info;
 extern crate test;
 
 use sys_info::*;
