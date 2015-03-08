@@ -1,8 +1,5 @@
 #![feature(core)]
-#![feature(std_misc)]
-#![feature(fs)]
 #![feature(io)]
-#![feature(process)]
 
 //! #Introduction
 //! This crate focuses on geting system information.
