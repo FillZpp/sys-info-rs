@@ -1,5 +1,4 @@
 #![feature(core)]
-#![feature(io)]
 
 //! #Introduction
 //! This crate focuses on geting system information.
