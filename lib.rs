@@ -14,6 +14,7 @@ use std::io::Read;
 use std::fs::File;
 use std::sync::{Once, ONCE_INIT};
 use std::mem;
+use std::convert::AsRef;
 
 /// System load average value.
 #[repr(C)]
@@ -151,7 +152,8 @@ pub fn cpu_speed() -> Result<u64, String> {
                     let mut f = File::open("/proc/cpuinfo").unwrap();
                     let mut s = String::new();
                     let _ = f.read_to_string(&mut s).unwrap();
-                    let mut lines = s.as_slice().split('\n');
+                    let sr: &str = s.as_ref();
+                    let mut lines = sr.split('\n');
                     for _ in 0..7 {
                         lines.next();
                     }
@@ -178,7 +180,8 @@ pub fn loadavg() -> Result<LoadAvg, String> {
         let mut f = File::open("/proc/loadavg").unwrap();
         let mut s = String::new();
         let _ = f.read_to_string(&mut s).unwrap();
-        let mut words = s.as_slice().split(' ');
+        let sr: &str = s.as_ref();
+        let mut words = sr.split(' ');
         let one = words.next().unwrap().parse::<f64>().unwrap();
         let five = words.next().unwrap().parse::<f64>().unwrap();
         let fifteen = words.next().unwrap().parse::<f64>().unwrap();
@@ -199,7 +202,8 @@ pub fn proc_total() -> Result<u64, String> {
         let mut s = String::new();
         let _ = f.read_to_string(&mut s).unwrap();
         Ok({
-            let mut words = s.as_slice().splitn(3, ' ');
+            let sr: &str = s.as_ref();
+            let mut words = sr.splitn(3, ' ');
             for _ in 0..3 {
                 words.next();
             }
@@ -231,7 +235,8 @@ pub fn mem_info() -> Result<MemInfo, String> {
         let mut f = File::open("/proc/meminfo").unwrap();
         let mut s = String::new();
         let _ = f.read_to_string(&mut s).unwrap();
-        let mut lines = s.as_slice().split('\n');
+        let sr: &str = s.as_ref();
+        let mut lines = sr.split('\n');
         let total = get_mem_num(lines.next().unwrap());
         let free = get_mem_num(lines.next().unwrap());
         let avail = get_mem_num(lines.next().unwrap());
