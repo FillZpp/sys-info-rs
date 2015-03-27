@@ -18,7 +18,7 @@ links = "info"
 build = "build.rs"
 
 [lib]
-name = "sys-info"
+name = "sys_info"
 path = "lib.rs"
 
 [build-dependencies]

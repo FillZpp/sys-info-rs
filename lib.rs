@@ -1,4 +1,5 @@
 #![feature(core)]
+#![feature(convert)]
 
 //! #Introduction
 //! This crate focuses on geting system information.
@@ -76,7 +77,7 @@ pub fn os_type() -> Result<String, String> {
                     let mut s = String::new();
                     let _ = f.read_to_string(&mut s).unwrap();
                     s.pop();  // pop '\n'
-                    OS_TYPE = mem::copy_lifetime(OS_TYPE, s.as_slice());
+                    OS_TYPE = mem::copy_lifetime(OS_TYPE, s.as_ref());
                     mem::forget(s);
                 } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
                     OS_TYPE = str::from_utf8(ffi::CStr::from_ptr(get_os_type())
@@ -104,7 +105,7 @@ pub fn os_release() -> Result<String, String> {
                     let mut s = String::new();
                     let _ = f.read_to_string(&mut s).unwrap();
                     s.pop();
-                    OS_RELEASE = std::mem::copy_lifetime(OS_RELEASE, s.as_slice());
+                    OS_RELEASE = std::mem::copy_lifetime(OS_RELEASE, s.as_ref());
                     mem::forget(s);
                 } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
                     OS_RELEASE = str::from_utf8(
