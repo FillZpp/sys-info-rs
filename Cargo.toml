@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["system", "cpu", "disk", "memory"]
 repository = "https://github.com/FillZpp/sys-info-rs"
-documentation = "http://docs.fillzpp.org/sys-info-rs/sys-info/"
+documentation = "http://docs.fillzpp.org/sys-info-rs/sys_info/"
 description = """
 Get system information in Rust.
 
