@@ -1,5 +1,5 @@
 #![feature(core)]
-#![feature(convert)]
+
 
 //! #Introduction
 //! This crate focuses on geting system information.
