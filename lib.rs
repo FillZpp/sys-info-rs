@@ -8,7 +8,6 @@
 use std::ffi;
 use std::io::Read;
 use std::fs::File;
-use std::sync::{Once, ONCE_INIT};
 
 
 /// System load average value.
@@ -100,15 +99,8 @@ pub fn os_release() -> Result<String, String> {
 ///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, String> {
-    static mut CPU_NUM: u32 = 0;
-    static CPU_NUM_INIT: Once = ONCE_INIT;
     if cfg!(unix) || cfg!(windows) {
-        unsafe {
-            CPU_NUM_INIT.call_once(|| {
-                CPU_NUM = get_cpu_num();
-            });
-            Ok(CPU_NUM)
-        }
+        unsafe { Ok(get_cpu_num()) }
     } else {
         Err("Unsupported system".to_string())
     }
@@ -118,30 +110,21 @@ pub fn cpu_num() -> Result<u32, String> {
 ///
 /// Such as 2500, that is 2500 MHz.
 pub fn cpu_speed() -> Result<u64, String> {
-    static mut CPU_SPEED: u64 = 0;
-    static CPU_SPEED_INIT: Once = ONCE_INIT;
-    if cfg!(unix) || cfg!(windows) {
-        unsafe {
-            CPU_SPEED_INIT.call_once(|| {
-                CPU_SPEED = if cfg!(target_os = "linux") {
-                    // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
-                    let mut f = File::open("/proc/cpuinfo").unwrap();
-                    let mut s = String::new();
-                    let _ = f.read_to_string(&mut s).unwrap();
-                    let mut lines = s.split('\n');
-                    for _ in 0..7 {
-                        lines.next();
-                    }
-                    let mut words = lines.next().unwrap().split(':');
-                    words.next();
-                    let s = words.next().unwrap().trim().trim_right_matches('\n');
-                    s.parse::<f64>().unwrap() as u64
-                } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-                    get_cpu_speed()
-                } else { 0 };
-            });
-            Ok(CPU_SPEED)
+    if cfg!(target_os = "linux") {
+        // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
+        let mut f = File::open("/proc/cpuinfo").unwrap();
+        let mut s = String::new();
+        let _ = f.read_to_string(&mut s).unwrap();
+        let mut lines = s.split('\n');
+        for _ in 0..7 {
+            lines.next();
         }
+        let mut words = lines.next().unwrap().split(':');
+        words.next();
+        let s = words.next().unwrap().trim().trim_right_matches('\n');
+        Ok(s.parse::<f64>().unwrap() as u64)
+    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+        unsafe { Ok(get_cpu_speed()) }
     } else {
         Err("Unsupported system".to_string())
     }
