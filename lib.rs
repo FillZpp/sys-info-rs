@@ -159,7 +159,7 @@ pub fn proc_total() -> Result<u64, String> {
         let mut s = String::new();
         let _ = f.read_to_string(&mut s).unwrap();
         Ok({
-            let mut words = s.splitn(3, ' ');
+            let mut words = s.splitn(4, ' ');
             for _ in 0..3 {
                 words.next();
             }
@@ -177,7 +177,7 @@ pub fn proc_total() -> Result<u64, String> {
 
 // Analyse number from line.
 fn get_mem_num(line: &str) -> u64 {
-    let mut line = line.splitn(1, ' ');
+    let mut line = line.splitn(2, ' ');
     line.next();
     line.next().unwrap().trim_left().split(' ').next().unwrap()
         .parse::<u64>().unwrap()
