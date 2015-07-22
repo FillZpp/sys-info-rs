@@ -154,7 +154,7 @@ DiskInfo get_disk_info(void) {
 	mntsize = getmntinfo(&mntbuf, MNT_NOWAIT);
 	mntsize = regetmntinfo(&mntbuf, mntsize, vfslist);
 
-	for (i = 0; i < mntsize-1; i++) {
+	for (i = 0; i < mntsize; i++) {
 		if ((mntbuf[i].f_flags & MNT_IGNORE) == 0) {
 			used = mntbuf[i].f_blocks - mntbuf[i].f_bfree;
 			availblks = mntbuf[i].f_bavail + used;
