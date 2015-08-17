@@ -44,6 +44,13 @@ pub struct DiskInfo {
     pub free: u64
 }
 
+/// Error types
+#[derive(Debug)]
+pub enum Error {
+    UnsupportedSystem,
+    ExecFailed(String),
+}
+
 extern {
     fn get_os_type() -> *const i8;
     fn get_os_release() -> *const i8;
@@ -62,7 +69,7 @@ extern {
 /// Get operation system type.
 ///
 /// Such as "Linux", "Darwin", "Windows".
-pub fn os_type() -> Result<String, String> {
+pub fn os_type() -> Result<String, Error> {
     if cfg!(target_os = "linux") {
         let mut s = String::new();
         let mut f = File::open("/proc/sys/kernel/ostype").unwrap();
@@ -73,14 +80,14 @@ pub fn os_type() -> Result<String, String> {
         unsafe { Ok(String::from_utf8_lossy(ffi::CStr::from_ptr(get_os_type())
                                             .to_bytes()).into_owned()) }
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get operation system release version.
 ///
 /// Such as "3.19.0-gentoo"
-pub fn os_release() -> Result<String, String> {
+pub fn os_release() -> Result<String, Error> {
     if cfg!(target_os = "linux") {
         let mut f = File::open("/proc/sys/kernel/osrelease").unwrap();
         let mut s = String::new();
@@ -91,25 +98,25 @@ pub fn os_release() -> Result<String, String> {
         unsafe { Ok(String::from_utf8_lossy(
             ffi::CStr::from_ptr(get_os_release()).to_bytes()).into_owned()) }
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get cpu num quantity.
 ///
 /// Notice, it returns the logical cpu quantity.
-pub fn cpu_num() -> Result<u32, String> {
+pub fn cpu_num() -> Result<u32, Error> {
     if cfg!(unix) || cfg!(windows) {
         unsafe { Ok(get_cpu_num()) }
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get cpu speed.
 ///
 /// Such as 2500, that is 2500 MHz.
-pub fn cpu_speed() -> Result<u64, String> {
+pub fn cpu_speed() -> Result<u64, Error> {
     if cfg!(target_os = "linux") {
         // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
         let mut f = File::open("/proc/cpuinfo").unwrap();
@@ -126,14 +133,14 @@ pub fn cpu_speed() -> Result<u64, String> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         unsafe { Ok(get_cpu_speed()) }
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get system load average value.
 ///
 /// Notice, on windows, one/five/fifteen of the LoadAvg returned are the current load.
-pub fn loadavg() -> Result<LoadAvg, String> {
+pub fn loadavg() -> Result<LoadAvg, Error> {
     if cfg!(target_os = "linux") {
         let mut f = File::open("/proc/loadavg").unwrap();
         let mut s = String::new();
@@ -146,14 +153,14 @@ pub fn loadavg() -> Result<LoadAvg, String> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_loadavg() })
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get current processes quantity.
 ///
 /// Notice, it temporarily does not support Windows.
-pub fn proc_total() -> Result<u64, String> {
+pub fn proc_total() -> Result<u64, Error> {
     if cfg!(target_os = "linux") {
         let mut f = File::open("/proc/loadavg").unwrap();
         let mut s = String::new();
@@ -171,7 +178,7 @@ pub fn proc_total() -> Result<u64, String> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_proc_total() })
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
@@ -186,7 +193,7 @@ fn get_mem_num(line: &str) -> u64 {
 /// Get memory information.
 ///
 /// On Mac OS X and Windows, the buffers and cached variables of the MemInfo returned are zero.
-pub fn mem_info() -> Result<MemInfo, String> {
+pub fn mem_info() -> Result<MemInfo, Error> {
     if cfg!(target_os = "linux") {
         let mut f = File::open("/proc/meminfo").unwrap();
         let mut s = String::new();
@@ -211,31 +218,31 @@ pub fn mem_info() -> Result<MemInfo, String> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_mem_info() })
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get disk information.
 ///
 /// Notice, it just calculate current disk on Windows.
-pub fn disk_info() -> Result<DiskInfo, String> {
+pub fn disk_info() -> Result<DiskInfo, Error> {
     if cfg!(target_os = "linux") ||
         cfg!(target_os = "macos") ||
         cfg!(target_os = "windows")
     {
         Ok(unsafe { get_disk_info() })
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
 /// Get hostname.
-pub fn hostname() -> Result<String, String> {
+pub fn hostname() -> Result<String, Error> {
     use std::process::Command;
     if cfg!(unix) {
         let output = match Command::new("hostname").output() {
             Ok(o)  => o,
-            Err(e) => return Err(format!("failed to execute process: {}", e)),
+            Err(e) => return Err(Error::ExecFailed(format!("failed to execute process: {}", e))),
         };
         let mut s = String::from_utf8(output.stdout).unwrap();
         s.pop();  // pop '\n'
@@ -243,13 +250,13 @@ pub fn hostname() -> Result<String, String> {
     } else if cfg!(windows) {
         let output = match Command::new("hostname").output() {
             Ok(o)  => o,
-            Err(e) => return Err(format!("failed to execute process: {}", e)),
+            Err(e) => return Err(Error::ExecFailed(format!("failed to execute process: {}", e))),
         };
         let mut s = String::from_utf8(output.stdout).unwrap();
         s.pop();  // pop '\n'
         Ok(s)
     } else {
-        Err("Unsupported system".to_string())
+        Err(Error::UnsupportedSystem)
     }
 }
 
