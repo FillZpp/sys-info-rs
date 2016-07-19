@@ -77,10 +77,13 @@ LoadAvg get_loadavg(void) {
 
 unsigned long get_proc_total(void) {
 	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses;
-
+#ifdef PSAPI_VERSION == 2
+	if (!K32EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
+#else
 	if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
-		cprocesses = 0;
-	else
+    cprocesses = 0;
+#endif
+  else
 		cprocesses = cb_needed / sizeof(unsigned long);
 	return cprocesses;
 }
