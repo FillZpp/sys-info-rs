@@ -78,7 +78,7 @@ LoadAvg get_loadavg(void) {
 unsigned long get_proc_total(void) {
 	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses;
 
-	if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
+	if (!K32EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
 		cprocesses = 0;
 	else
 		cprocesses = cb_needed / sizeof(unsigned long);
