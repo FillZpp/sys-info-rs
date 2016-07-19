@@ -19,7 +19,6 @@ fn main() {
     } else if cfg!(target_os = "macos") {
         gcc::compile_library("libinfo.a", &["c/macos.c"]);
     } else if cfg!(target_os = "windows") {
-        println!("ran windows build...");
         gcc::compile_library("libinfo.a", &["c/windows.c"]);
         println!("cargo:rustc-flags=-l psapi");
     } else {
