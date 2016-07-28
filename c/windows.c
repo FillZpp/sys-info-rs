@@ -76,16 +76,16 @@ LoadAvg get_loadavg(void) {
 }
 
 unsigned long get_proc_total(void) {
-	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses;
-#ifdef PSAPI_VERSION == 2
-	if (!K32EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
-#else
-	if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
+	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses; 
+  /* causes issues during link with rust and I don't need this function
+  if (!K32EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
     cprocesses = 0;
-#endif
   else
-		cprocesses = cb_needed / sizeof(unsigned long);
-	return cprocesses;
+    cprocesses = cb_needed / sizeof(unsigned long);
+	
+  return cprocesses;
+  */
+  return 0;
 }
 
 MemInfo get_mem_info(void) {
