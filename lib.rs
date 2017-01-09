@@ -13,6 +13,7 @@ use std::fs::File;
 
 /// System load average value.
 #[repr(C)]
+#[derive(Debug)]
 pub struct LoadAvg {
     /// Average load within one minite.
     pub one: f64,
@@ -24,6 +25,7 @@ pub struct LoadAvg {
 
 /// System memory information.
 #[repr(C)]
+#[derive(Debug)]
 pub struct MemInfo {
     /// Total physical memory.
     pub total: u64,
@@ -40,6 +42,7 @@ pub struct MemInfo {
 
 /// Disk information.
 #[repr(C)]
+#[derive(Debug)]
 pub struct DiskInfo {
     pub total: u64,
     pub free: u64,
@@ -292,51 +295,60 @@ mod test {
     pub fn test_os_type() {
         let typ = os_type().unwrap();
         assert!(typ.len() > 0);
+        println!("os_type(): {}", typ);
     }
 
     #[test]
     pub fn test_os_release() {
         let release = os_release().unwrap();
         assert!(release.len() > 0);
+        println!("os_release(): {}", release);
     }
 
     #[test]
     pub fn test_cpu_num() {
         let num = cpu_num().unwrap();
         assert!(num > 0);
+        println!("cpu_num(): {}", num);
     }
 
     #[test]
     pub fn test_cpu_speed() {
         let speed = cpu_speed().unwrap();
         assert!(speed > 0);
+        println!("cpu_speed(): {}", speed);
     }
 
     #[test]
     pub fn test_loadavg() {
-        let _ = loadavg().unwrap();
+        let load = loadavg().unwrap();
+        println!("loadavg(): {:?}", load);
     }
 
     #[test]
     pub fn test_proc_total() {
         let procs = proc_total().unwrap();
         assert!(procs > 0);
+        println!("proc_total(): {}", procs);
     }
 
     #[test]
     pub fn test_mem_info() {
         let mem = mem_info().unwrap();
         assert!(mem.total > 0);
+        println!("mem_info(): {:?}", mem);
     }
 
     #[test]
     pub fn test_disk_info() {
-        let _ = disk_info().unwrap();
+        let info = disk_info().unwrap();
+        println!("disk_info(): {:?}", info);
     }
 
     #[test]
     pub fn test_hostname() {
         let host = hostname().unwrap();
         assert!(host.len() > 0);
+        println!("hostname(): {}", host);
     }
 }
