@@ -38,7 +38,7 @@ pub struct MemInfo {
     pub swap_free: u64,
 }
 
-/// System momory information.
+/// Disk information.
 #[repr(C)]
 pub struct DiskInfo {
     pub total: u64,
