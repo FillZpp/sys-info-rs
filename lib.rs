@@ -283,3 +283,60 @@ pub fn hostname() -> Result<String, Error> {
         Err(Error::UnsupportedSystem)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    pub fn test_os_type() {
+        let typ = os_type().unwrap();
+        assert!(typ.len() > 0);
+    }
+
+    #[test]
+    pub fn test_os_release() {
+        let release = os_release().unwrap();
+        assert!(release.len() > 0);
+    }
+
+    #[test]
+    pub fn test_cpu_num() {
+        let num = cpu_num().unwrap();
+        assert!(num > 0);
+    }
+
+    #[test]
+    pub fn test_cpu_speed() {
+        let speed = cpu_speed().unwrap();
+        assert!(speed > 0);
+    }
+
+    #[test]
+    pub fn test_loadavg() {
+        let _ = loadavg().unwrap();
+    }
+
+    #[test]
+    pub fn test_proc_total() {
+        let procs = proc_total().unwrap();
+        assert!(procs > 0);
+    }
+
+    #[test]
+    pub fn test_mem_info() {
+        let mem = mem_info().unwrap();
+        assert!(mem.total > 0);
+    }
+
+    #[test]
+    pub fn test_disk_info() {
+        let _ = disk_info().unwrap();
+    }
+
+    #[test]
+    pub fn test_hostname() {
+        let host = hostname().unwrap();
+        assert!(host.len() > 0);
+    }
+}
