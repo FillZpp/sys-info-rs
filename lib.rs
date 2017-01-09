@@ -122,9 +122,7 @@ pub fn os_type() -> Result<String, Error> {
         s.pop(); // pop '\n'
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        let typ = unsafe {
-            ffi::CStr::from_ptr(get_os_type()).to_bytes()
-        };
+        let typ = unsafe { ffi::CStr::from_ptr(get_os_type()).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     } else {
         Err(Error::UnsupportedSystem)
@@ -141,9 +139,7 @@ pub fn os_release() -> Result<String, Error> {
         s.pop(); // pop '\n'
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        let typ = unsafe {
-            ffi::CStr::from_ptr(get_os_release()).to_bytes()
-        };
+        let typ = unsafe { ffi::CStr::from_ptr(get_os_release()).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     } else {
         Err(Error::UnsupportedSystem)
@@ -169,13 +165,13 @@ pub fn cpu_speed() -> Result<u64, Error> {
         // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
         let mut s = String::new();
         File::open("/proc/cpuinfo")?.read_to_string(&mut s)?;
-        
+
         s.split('\n')
-         .find(|line| line.starts_with("cpu MHz")) 
-         .and_then(|line| line.split(':').last())
-         .and_then(|val| val.trim().parse::<f64>().ok())
-         .map(|speed| speed as u64)
-         .ok_or(Error::Unknown)
+            .find(|line| line.starts_with("cpu MHz"))
+            .and_then(|line| line.split(':').last())
+            .and_then(|val| val.trim().parse::<f64>().ok())
+            .map(|speed| speed as u64)
+            .ok_or(Error::Unknown)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         unsafe { Ok(get_cpu_speed()) }
     } else {
@@ -191,9 +187,9 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
         let mut s = String::new();
         File::open("/proc/loadavg")?.read_to_string(&mut s)?;
         let loads = s.split(' ')
-                     .take(3)
-                     .map(|val| val.parse::<f64>().unwrap())
-                     .collect::<Vec<f64>>();
+            .take(3)
+            .map(|val| val.parse::<f64>().unwrap())
+            .collect::<Vec<f64>>();
         Ok(LoadAvg {
             one: loads[0],
             five: loads[1],
@@ -213,10 +209,11 @@ pub fn proc_total() -> Result<u64, Error> {
     if cfg!(target_os = "linux") {
         let mut s = String::new();
         File::open("/proc/loadavg")?.read_to_string(&mut s)?;
-        s.split(' ').nth(3)
-         .and_then(|val| val.split('/').last())
-         .and_then(|val| val.parse::<u64>().ok())
-         .ok_or(Error::Unknown)
+        s.split(' ')
+            .nth(3)
+            .and_then(|val| val.split('/').last())
+            .and_then(|val| val.parse::<u64>().ok())
+            .ok_or(Error::Unknown)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_proc_total() })
     } else {
@@ -240,8 +237,8 @@ pub fn mem_info() -> Result<MemInfo, Error> {
         let mut s = String::new();
         File::open("/proc/meminfo")?.read_to_string(&mut s)?;
         let info = s.lines()
-                    .map(get_mem_num)
-                    .collect::<Vec<u64>>();
+            .map(get_mem_num)
+            .collect::<Vec<u64>>();
         Ok(MemInfo {
             total: info[0],
             free: info[1],
