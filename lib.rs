@@ -8,7 +8,7 @@
 use std::ffi;
 use std::io::Read;
 use std::fs::File;
-
+use std::os::raw::c_char;
 
 /// System load average value.
 #[repr(C)]
@@ -78,7 +78,7 @@ pub fn os_type() -> Result<String, Error> {
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         unsafe {
-            Ok(String::from_utf8_lossy(ffi::CStr::from_ptr(get_os_type()).to_bytes()).into_owned())
+            Ok(String::from_utf8_lossy(ffi::CStr::from_ptr(get_os_type() as *const c_char).to_bytes()).into_owned())
         }
     } else {
         Err(Error::UnsupportedSystem)
@@ -97,7 +97,7 @@ pub fn os_release() -> Result<String, Error> {
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         unsafe {
-            Ok(String::from_utf8_lossy(ffi::CStr::from_ptr(get_os_release()).to_bytes())
+            Ok(String::from_utf8_lossy(ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes())
                    .into_owned())
         }
     } else {
