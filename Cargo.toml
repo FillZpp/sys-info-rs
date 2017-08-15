@@ -22,6 +22,6 @@ name = "sys_info"
 path = "lib.rs"
 
 [build-dependencies]
-gcc = "*"
+gcc = "0.3.51"
 
 
