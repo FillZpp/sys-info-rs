@@ -9,7 +9,7 @@ use std::ffi;
 use std::fmt;
 use std::io::{self, Read};
 use std::fs::File;
-
+use std::os::raw::c_char;
 
 /// System load average value.
 #[repr(C)]
@@ -122,7 +122,7 @@ pub fn os_type() -> Result<String, Error> {
         s.pop(); // pop '\n'
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        let typ = unsafe { ffi::CStr::from_ptr(get_os_type()).to_bytes() };
+        let typ = unsafe { ffi::CStr::from_ptr(get_os_type() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     } else {
         Err(Error::UnsupportedSystem)
@@ -139,7 +139,7 @@ pub fn os_release() -> Result<String, Error> {
         s.pop(); // pop '\n'
         Ok(s)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
-        let typ = unsafe { ffi::CStr::from_ptr(get_os_release()).to_bytes() };
+        let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     } else {
         Err(Error::UnsupportedSystem)
