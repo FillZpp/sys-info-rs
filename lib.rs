@@ -392,7 +392,6 @@ mod test {
     pub fn test_boottime() {
         let bt = boottime().unwrap();
         println!("boottime(): {} {}", bt.tv_sec, bt.tv_usec);
-        assert!(bt.tv_sec > 0);
-        assert!(bt.tv_usec > 0);
+        assert!(bt.tv_sec > 0 || bt.tv_usec > 0);
     }
 }
