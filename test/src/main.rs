@@ -17,6 +17,8 @@ fn main() {
     let disk = disk_info().unwrap();
     println!("disk: total {} KB, free {} KB", disk.total, disk.free);
     println!("hostname: {}", hostname().unwrap());
+    let t = boottime().unwrap();
+    println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
 
 }
 
