@@ -9,7 +9,7 @@ And now it can get information of kernel/cpu/memory/disk/load/hostname and so on
 
 [Documentation](https://docs.rs/sys-info/0.5.0/sys_info/)
 
-###Usage
+### Usage
 Add this to `Cargo.toml`:
 
 ```
