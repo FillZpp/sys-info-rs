@@ -387,4 +387,12 @@ mod test {
         assert!(host.len() > 0);
         println!("hostname(): {}", host);
     }
+
+    #[test]
+    pub fn test_boottime() {
+        let bt = boottime().unwrap();
+        assert!(bt.tv_sec > 0);
+        assert!(bt.tv_usec > 0);
+        println!("boottime(): {} {}", bt.tv_sec, bt.tv_usec);
+    }
 }
