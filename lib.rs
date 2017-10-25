@@ -13,6 +13,7 @@ use std::io::{self, Read};
 use std::fs::File;
 use std::os::raw::c_char;
 
+#[cfg(not(windows))]
 use libc::sysctl;
 use libc::timeval;
 use std::mem::size_of_val;
@@ -295,6 +296,7 @@ pub fn hostname() -> Result<String, Error> {
 }
 
 /// Get system boottime
+#[cfg(not(windows))]
 pub fn boottime() -> Result<timeval, Error> {
     let mut bt = timeval {
         tv_sec: 0,
