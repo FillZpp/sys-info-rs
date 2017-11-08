@@ -19,6 +19,8 @@ use libc::timeval;
 use std::mem::size_of_val;
 use std::ptr::null_mut;
 
+use std::collections::HashMap;
+
 static MAC_CTL_KERN: libc::c_int = 1;
 static MAC_KERN_BOOTTIME: libc::c_int = 21;
 
@@ -232,13 +234,6 @@ pub fn proc_total() -> Result<u64, Error> {
     }
 }
 
-// Analyse number from line.
-fn get_mem_num(line: &str) -> u64 {
-    line.split_whitespace()
-        .nth(1)
-        .and_then(|val| val.parse::<u64>().ok())
-        .unwrap()
-}
 
 /// Get memory information.
 ///
@@ -247,17 +242,25 @@ pub fn mem_info() -> Result<MemInfo, Error> {
     if cfg!(target_os = "linux") {
         let mut s = String::new();
         File::open("/proc/meminfo")?.read_to_string(&mut s)?;
-        let info = s.lines()
-            .map(get_mem_num)
-            .collect::<Vec<u64>>();
+        let mut meminfo_hashmap = HashMap::new();
+        for line in s.lines() {
+            let mut split_line = line.split_whitespace();
+            let label = split_line.next();
+            let value = split_line.next();
+            if value.is_some() && label.is_some() {
+                let label = label.unwrap().split(":").nth(0).ok_or(Error::Unknown)?;
+                let value = value.unwrap().parse::<u64>().ok().ok_or(Error::Unknown)?;
+                meminfo_hashmap.insert(label, value);
+            }
+        }
         Ok(MemInfo {
-            total: info[0],
-            free: info[1],
-            avail: info[2],
-            buffers: info[3],
-            cached: info[4],
-            swap_total: info[14],
-            swap_free: info[15],
+            total: *meminfo_hashmap.get("MemTotal").ok_or(Error::Unknown)?,
+            free: *meminfo_hashmap.get("MemFree").ok_or(Error::Unknown)?,
+            avail: *meminfo_hashmap.get("MemAvailable").ok_or(Error::Unknown)?,
+            buffers: *meminfo_hashmap.get("Buffers").ok_or(Error::Unknown)?,
+            cached: *meminfo_hashmap.get("Cached").ok_or(Error::Unknown)?,
+            swap_total: *meminfo_hashmap.get("SwapTotal").ok_or(Error::Unknown)?,
+            swap_free: *meminfo_hashmap.get("SwapFree").ok_or(Error::Unknown)?,
         })
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_mem_info() })
