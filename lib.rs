@@ -306,7 +306,8 @@ pub fn boottime() -> Result<timeval, Error> {
         tv_usec: 0
     };
 
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "linux")]
+    {
         let mut s = String::new();
         File::open("/proc/uptime")?.read_to_string(&mut s)?;
         let secs = s.trim().split(' ')
@@ -315,7 +316,9 @@ pub fn boottime() -> Result<timeval, Error> {
             .collect::<Vec<f64>>();
         bt.tv_sec = secs[0] as libc::time_t;
         bt.tv_usec = secs[1] as libc::suseconds_t;
-    } else if cfg!(target_os = "macos") {
+    }
+    #[cfg(target_os = "macos")]
+    {
         let mut mib = [MAC_CTL_KERN, MAC_KERN_BOOTTIME];
         let mut size: libc::size_t = size_of_val(&bt) as libc::size_t;
         unsafe {
