@@ -248,7 +248,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             let label = split_line.next();
             let value = split_line.next();
             if value.is_some() && label.is_some() {
-                let label = label.unwrap().split(":").nth(0).ok_or(Error::Unknown)?;
+                let label = label.unwrap().split(':').nth(0).ok_or(Error::Unknown)?;
                 let value = value.unwrap().parse::<u64>().ok().ok_or(Error::Unknown)?;
                 meminfo_hashmap.insert(label, value);
             }
@@ -286,12 +286,12 @@ pub fn hostname() -> Result<String, Error> {
     if cfg!(unix) {
         Command::new("hostname")
             .output()
-            .map_err(|e| Error::ExecFailed(e))
+            .map_err(Error::ExecFailed)
             .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
     } else if cfg!(windows) {
         Command::new("hostname")
             .output()
-            .map_err(|e| Error::ExecFailed(e))
+            .map_err(Error::ExecFailed)
             .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
     } else {
         Err(Error::UnsupportedSystem)
