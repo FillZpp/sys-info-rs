@@ -1,4 +1,4 @@
-extern crate gcc;
+extern crate cc;
 
 use std::env;
 
@@ -6,13 +6,15 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     let target_os = target.split('-').nth(2).unwrap();
 
+    let mut builder = cc::Build::new();
     match target_os {
-        "linux" => gcc::compile_library("libinfo.a", &["c/linux.c"]),
-        "darwin" => gcc::compile_library("libinfo.a", &["c/macos.c"]),
+        "linux" => builder.file("c/linux.c"),
+        "darwin" => builder.file("c/macos.c"),
         "windows" => {
-            gcc::compile_library("libinfo.a", &["c/windows.c"]);
             println!("cargo:rustc-flags=-l psapi");
+            builder.file("c/windows.c")
         },
         _ => panic!("Unsupported system")
     };
+    builder.compile("info");
 }
