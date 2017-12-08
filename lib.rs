@@ -179,12 +179,17 @@ pub fn cpu_speed() -> Result<u64, Error> {
         let mut s = String::new();
         File::open("/proc/cpuinfo")?.read_to_string(&mut s)?;
 
-        s.split('\n')
-            .find(|line| line.starts_with("cpu MHz"))
-            .and_then(|line| line.split(':').last())
+        let mut find_cpu_mhz = s.split('\n').find(|line| line.starts_with("cpu MHz"));
+        match find_cpu_mhz {
+            None => find_cpu_mhz = s.split('\n').find(|line| line.starts_with("BogoMIPS")),
+            _ => {}
+        }
+
+        find_cpu_mhz.and_then(|line| line.split(':').last())
             .and_then(|val| val.trim().parse::<f64>().ok())
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
+
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         unsafe { Ok(get_cpu_speed()) }
     } else {
