@@ -53,7 +53,7 @@ DiskInfo get_disk_info(void) {
 	char procline[1024];
 	char *mount, *device, *type, *mode, *other;
 	float thispct, max=0.0;
-	double dtotal, dfree;
+	double dtotal=0.0, dfree=0.0;
 	DiskInfo di;
 	
 	di.total = 0;
