@@ -34,24 +34,45 @@ const char *get_os_type(void) {
 	return os_type;
 }
 
+const char *get_os_release(void) {
+	return "";
+}
+
 unsigned int get_cpu_num(void) {
 	return get_nprocs();
 }
+
 
 /*
   get_cpu_speed
   /sys/devices/system/cpu/cpu0
 */
 
+unsigned long get_cpu_speed(void) {
+    return 0;
+}
+
 /*
   get_loadavg & get_proc_total
   /proc/loadavg
 */
 
+LoadAvg get_loadavg(void) {
+    return { };
+}
+
+unsigned long get_proc_total(void) {
+    return 0;
+}
+
 /*
   get_mem_info
   /proc/meminfo
 */
+
+MemInfo get_mem_info(void) {
+    return { };
+}
 
 DiskInfo get_disk_info(void) {
 	FILE *mounts;
