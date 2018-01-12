@@ -58,7 +58,8 @@ unsigned long get_cpu_speed(void) {
 */
 
 LoadAvg get_loadavg(void) {
-    return { };
+    LoadAvg avg;
+    return avg;
 }
 
 unsigned long get_proc_total(void) {
@@ -71,7 +72,8 @@ unsigned long get_proc_total(void) {
 */
 
 MemInfo get_mem_info(void) {
-    return { };
+    MemInfo info;
+    return info;
 }
 
 DiskInfo get_disk_info(void) {
