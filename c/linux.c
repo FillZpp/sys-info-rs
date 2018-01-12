@@ -8,6 +8,7 @@
 
 #define DFHASHSIZE 101
 #define MOUNTS "/proc/mounts"
+static const char *os_type = "Windows";
 
 /* Internal Declarations */
 struct nlist {
@@ -28,6 +29,10 @@ float device_space(char*, char*, double*, double*);
   get_os_type & get_os_release
   /proc/sys/kernel
 */
+
+const char *get_os_type(void) {
+	return os_type;
+}
 
 unsigned int get_cpu_num(void) {
 	return get_nprocs();
