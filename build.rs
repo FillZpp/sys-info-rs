@@ -8,13 +8,13 @@ fn main() {
 
     let mut builder = cc::Build::new();
     match target_os {
-        "linux" => builder.file("c/linux.c"),
-        "darwin" => builder.file("c/macos.c"),
+        "linux" | "android" | "androideabi" => builder.file("c/linux.c"),
+        "darwin" | "ios" => builder.file("c/macos.c"),
         "windows" => {
             println!("cargo:rustc-flags=-l psapi");
             builder.file("c/windows.c")
         },
-        _ => panic!("Unsupported system")
+        _ => panic!("unsupported system: {}", target_os)
     };
     builder.compile("info");
 }
