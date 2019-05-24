@@ -402,6 +402,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(windows))]
     pub fn test_boottime() {
         let bt = boottime().unwrap();
         println!("boottime(): {} {}", bt.tv_sec, bt.tv_usec);
