@@ -258,14 +258,25 @@ pub fn mem_info() -> Result<MemInfo, Error> {
                 meminfo_hashmap.insert(label, value);
             }
         }
+        let total = *meminfo_hashmap.get("MemTotal").ok_or(Error::Unknown)?;
+        let free = *meminfo_hashmap.get("MemFree").ok_or(Error::Unknown)?;
+        let buffers = *meminfo_hashmap.get("Buffers").ok_or(Error::Unknown)?;
+        let cached = *meminfo_hashmap.get("Cached").ok_or(Error::Unknown)?;
+        let avail = meminfo_hashmap.get("MemAvailable").map(|v| v.clone()).or_else(|| {
+            let sreclaimable = *meminfo_hashmap.get("SReclaimable")?;
+            let shmem = *meminfo_hashmap.get("Shmem")?;
+            Some(free + buffers + cached + sreclaimable - shmem)
+        }).ok_or(Error::Unknown)?;
+        let swap_total = *meminfo_hashmap.get("SwapTotal").ok_or(Error::Unknown)?;
+        let swap_free = *meminfo_hashmap.get("SwapFree").ok_or(Error::Unknown)?;
         Ok(MemInfo {
-            total: *meminfo_hashmap.get("MemTotal").ok_or(Error::Unknown)?,
-            free: *meminfo_hashmap.get("MemFree").ok_or(Error::Unknown)?,
-            avail: *meminfo_hashmap.get("MemAvailable").ok_or(Error::Unknown)?,
-            buffers: *meminfo_hashmap.get("Buffers").ok_or(Error::Unknown)?,
-            cached: *meminfo_hashmap.get("Cached").ok_or(Error::Unknown)?,
-            swap_total: *meminfo_hashmap.get("SwapTotal").ok_or(Error::Unknown)?,
-            swap_free: *meminfo_hashmap.get("SwapFree").ok_or(Error::Unknown)?,
+            total,
+            free,
+            avail,
+            buffers,
+            cached,
+            swap_total,
+            swap_free,
         })
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_mem_info() })
