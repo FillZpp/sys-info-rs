@@ -93,7 +93,7 @@ impl std::error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         use self::Error::*;
         match *self {
             UnsupportedSystem => None,
