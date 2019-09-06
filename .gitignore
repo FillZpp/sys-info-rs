@@ -13,3 +13,4 @@ target/
 *.lock
 
 .idea/
+*.code-workspace
