@@ -8,7 +8,7 @@
 
 #define DFHASHSIZE 101
 #define MOUNTS "/proc/mounts"
-static const char *os_type = "Windows";
+static const char *os_type = "Linux";
 
 /* Internal Declarations */
 struct nlist {

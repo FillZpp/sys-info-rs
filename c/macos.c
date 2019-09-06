@@ -281,7 +281,7 @@ char *makenetvfslist(void){
 		*strptr = ',';
 		free(listptr[i]);
 	}
-	*(--strptr) = NULL;
+	*(--strptr) = '\0';
 	free(listptr);
 	return (str);
 }
