@@ -15,13 +15,17 @@ use std::os::raw::c_char;
 
 #[cfg(target_os = "macos")]
 use libc::sysctl;
-use libc::timeval;
+#[cfg(target_os = "macos")]
 use std::mem::size_of_val;
+#[cfg(target_os = "macos")]
 use std::ptr::null_mut;
+use libc::timeval;
 
 use std::collections::HashMap;
 
+#[cfg(target_os = "macos")]
 static MAC_CTL_KERN: libc::c_int = 1;
+#[cfg(target_os = "macos")]
 static MAC_KERN_BOOTTIME: libc::c_int = 21;
 
 /// System load average value.
@@ -51,6 +55,32 @@ pub struct MemInfo {
     /// Total swap memory.
     pub swap_total: u64,
     pub swap_free: u64,
+}
+
+/// The os release info of Linux
+#[derive(Debug)]
+#[derive(Default)]
+pub struct LinuxOSReleaseInfo {
+    pub id: Option<String>,
+    pub id_like: Option<String>,
+    pub name: Option<String>,
+    pub pretty_name: Option<String>,
+
+    pub version: Option<String>,
+    pub version_id: Option<String>,
+    pub version_codename: Option<String>,
+
+    pub ansi_color: Option<String>,
+    pub cpe_name: Option<String>,
+    pub build_id: Option<String>,
+    pub variant: Option<String>,
+    pub variant_id: Option<String>,
+
+    pub home_url: Option<String>,
+    pub bug_report_url: Option<String>,
+    pub support_url: Option<String>,
+    pub documentation_url: Option<String>,
+    pub logo: Option<String>,
 }
 
 /// Disk information.
@@ -157,6 +187,68 @@ pub fn os_release() -> Result<String, Error> {
     } else {
         Err(Error::UnsupportedSystem)
     }
+}
+
+/// Get the os release note of Linux
+///
+/// Information in /etc/os-release, such as name and version of distribution.
+pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
+    if !cfg!(target_os = "linux") {
+        return Err(Error::UnsupportedSystem);
+    }
+
+    let mut s = String::new();
+    File::open("/etc/os-release")?.read_to_string(&mut s)?;
+
+    let mut info: LinuxOSReleaseInfo = Default::default();
+    for l in s.split('\n') {
+        match parse_line_for_linux_os_release(l.trim().to_string()) {
+            Some((key, value)) =>
+                match (key.as_ref(), value) {
+                    ("ID", val) => info.id = Some(val),
+                    ("ID_LIKE", val) => info.id_like = Some(val),
+                    ("NAME", val) => info.name = Some(val),
+                    ("PRETTY_NAME", val) => info.pretty_name = Some(val),
+
+                    ("VERSION", val) => info.version = Some(val),
+                    ("VERSION_ID", val) => info.version_id = Some(val),
+                    ("VERSION_CODENAME", val) => info.version_codename = Some(val),
+
+                    ("ANSI_COLOR", val) => info.ansi_color = Some(val),
+                    ("CPE_NAME", val) => info.cpe_name = Some(val),
+                    ("BUILD_ID", val) => info.build_id = Some(val),
+                    ("VARIANT", val) => info.variant = Some(val),
+                    ("VARIANT_ID", val) => info.variant_id = Some(val),
+
+                    ("HOME_URL", val) => info.home_url = Some(val),
+                    ("BUG_REPORT_URL", val) => info.bug_report_url = Some(val),
+                    ("SUPPORT_URL", val) => info.support_url = Some(val),
+                    ("DOCUMENTATION_URL", val) => info.documentation_url = Some(val),
+                    ("LOGO", val) => info.logo = Some(val),
+                    _ => {}
+                }
+            None => {}
+        }
+    }
+
+    Ok(info)
+}
+
+fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
+    let words: Vec<&str> = l.splitn(2, '=').collect();
+    if words.len() < 2 {
+        return None
+    }
+    let mut trim_value = String::from(words[1]);
+
+    if trim_value.starts_with('"') {
+        trim_value.remove(0);
+    }
+    if trim_value.ends_with('"') {
+        trim_value.remove(trim_value.len()-1);
+    }
+
+    return Some((String::from(words[0]), trim_value))
 }
 
 /// Get cpu num quantity.
@@ -418,5 +510,12 @@ mod test {
         let bt = boottime().unwrap();
         println!("boottime(): {} {}", bt.tv_sec, bt.tv_usec);
         assert!(bt.tv_sec > 0 || bt.tv_usec > 0);
+    }
+
+    #[test]
+    #[cfg(linux)]
+    pub fn test_linux_os_release() {
+        let os_release = linux_os_release().unwrap();
+        println!("linux_os_release(): {:?}", os_release.name)
     }
 }
