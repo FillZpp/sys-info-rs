@@ -271,14 +271,15 @@ pub fn cpu_speed() -> Result<u64, Error> {
         let mut s = String::new();
         File::open("/proc/cpuinfo")?.read_to_string(&mut s)?;
 
-        let mut find_cpu_mhz = s.split('\n').find(|line| line.starts_with("cpu MHz"));
-        match find_cpu_mhz {
-            None => find_cpu_mhz = s.split('\n').find(|line| line.starts_with("BogoMIPS")),
-            _ => {}
-        }
+        let find_cpu_mhz = s.split('\n').find(|line|
+            line.starts_with("cpu MHz\t") ||
+                line.starts_with("BogoMIPS") ||
+                line.starts_with("clock\t") ||
+                line.starts_with("bogomips per cpu")
+        );
 
         find_cpu_mhz.and_then(|line| line.split(':').last())
-            .and_then(|val| val.trim().parse::<f64>().ok())
+            .and_then(|val| val.replace("MHz", "").trim().parse::<f64>().ok())
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
 
