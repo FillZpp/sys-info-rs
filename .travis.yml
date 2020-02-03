@@ -10,6 +10,4 @@ cache: rust
 script:
   - cargo test --all --verbose
   - rustup component add clippy rustfmt &&
-    cargo clippy &&
-    cargo fmt -- --check
-
+    cargo clippy
