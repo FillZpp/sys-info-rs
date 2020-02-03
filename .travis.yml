@@ -7,5 +7,9 @@ rust:
   - beta
   - nightly
 cache: rust
-script: cargo test --verbose -- --nocapture
+script:
+  - cargo test --all --verbose
+  - rustup component add clippy rustfmt &&
+    cargo clippy &&
+    cargo fmt -- --check
 
