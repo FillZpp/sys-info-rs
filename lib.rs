@@ -395,10 +395,10 @@ pub fn hostname() -> Result<String, Error> {
         unsafe {
             let buf_size = libc::sysconf(libc::_SC_HOST_NAME_MAX) as usize;
             let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
-            if libc::gethostname(buf.as_mut_ptr() as *mut i8, buf_size) < 0 {
+            if libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf_size) < 0 {
                 return Err(Error::IO(io::Error::last_os_error()));
             }
-            let hostname_len = libc::strnlen(buf.as_ptr() as *const i8, buf_size);
+            let hostname_len = libc::strnlen(buf.as_ptr() as *const libc::c_char, buf_size);
             buf.set_len(hostname_len);
             Ok(ffi::CString::new(buf).unwrap().into_string().unwrap())
         }
