@@ -14,7 +14,7 @@ Add this to `Cargo.toml`:
 
 ```
 [dependencies]
-sys-info = "*"
+sys-info = "0.5"
 ```
 
 and add this to crate root:
