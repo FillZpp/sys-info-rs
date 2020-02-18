@@ -390,8 +390,8 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
 }
 
 /// Get hostname.
+#[cfg(target_family = "unix")]
 pub fn hostname() -> Result<String, Error> {
-    if cfg!(unix) {
         unsafe {
             let buf_size = libc::sysconf(libc::_SC_HOST_NAME_MAX) as usize;
             let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
@@ -402,15 +402,15 @@ pub fn hostname() -> Result<String, Error> {
             buf.set_len(hostname_len);
             Ok(ffi::CString::new(buf).unwrap().into_string().unwrap())
         }
-    } else if cfg!(windows) {
-        use std::process::Command;
-        Command::new("hostname")
-            .output()
-            .map_err(Error::ExecFailed)
-            .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
-    } else {
-        Err(Error::UnsupportedSystem)
-    }
+}
+
+#[cfg(target_family = "windows")]
+pub fn hostname() -> Result<String, Error> {
+    use std::process::Command;
+    Command::new("hostname")
+        .output()
+        .map_err(Error::ExecFailed)
+        .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
 }
 
 /// Get system boottime
