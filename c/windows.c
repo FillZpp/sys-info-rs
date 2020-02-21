@@ -27,8 +27,8 @@ const char *get_os_release(void) {
 	osvi.dwOSVersionInfoSize = sizeof(osvi);
 
 	if (GetVersionEx(&osvi))
-		snprintf(s, LEN, "%d.%d",
-			 osvi.dwMajorVersion, osvi.dwMinorVersion);
+		snprintf(s, LEN, "%d.%d.%d",
+			 osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
 	else
 		strncpy(s, "unknown", LEN);
 	s[LEN - 1] = '\0';
