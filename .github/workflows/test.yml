@@ -1,15 +1,45 @@
-name: Rust
+name: Test
 
-on: [push]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
-  build:
-
+  linux:
+    name: Linux ubuntu-latest
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Run example
+      run: cargo run --verbose --example info
+
+  windows:
+    name: Windows ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-10-LTSC-amd64-17763, windows-latest]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build --verbose
+    - name: Run example
+      run: cargo run --verbose --example info
+
+  macos:
+    name: macOS-latest
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Get Rust
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup && sh ./rustup -y
+    - name: Build
+      run: source ~/.cargo/env; cargo build --verbose
+    - name: Run example
+      run: source ~/.cargo/env; cargo run --verbose --example info

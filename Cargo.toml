@@ -26,3 +26,7 @@ cc = "1"
 
 [dependencies]
 libc = "0.2.29"
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3"
+features = ["sysinfoapi"]
