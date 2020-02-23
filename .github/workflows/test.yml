@@ -16,8 +16,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build
       run: cargo build --verbose
-    - name: Run example
-      run: cargo run --verbose --example info
+    - name: Run test
+      run: cargo test --verbose
 
   windows:
     name: Windows ${{ matrix.os }}
@@ -29,8 +29,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build
       run: cargo build --verbose
-    - name: Run example
-      run: cargo run --verbose --example info
+    - name: Run test
+      run: cargo test --verbose
 
   macos:
     name: macOS-latest
@@ -41,5 +41,5 @@ jobs:
       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup && sh ./rustup -y
     - name: Build
       run: source ~/.cargo/env; cargo build --verbose
-    - name: Run example
-      run: source ~/.cargo/env; cargo run --verbose --example info
+    - name: Run test
+      run: source ~/.cargo/env; cargo test --verbose
