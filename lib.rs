@@ -391,30 +391,30 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
     }
 }
 
-/// Get unix like os hostname.
-#[cfg(unix)]
+/// Get hostname.
+#[cfg(target_family = "unix")]
 pub fn hostname() -> Result<String, Error> {
-    unsafe {
-        let buf_size = libc::sysconf(libc::_SC_HOST_NAME_MAX) as usize;
-        let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
-        if libc::gethostname(buf.as_mut_ptr() as *mut i8, buf_size) < 0 {
-            return Err(Error::IO(io::Error::last_os_error()));
+        unsafe {
+            let buf_size = libc::sysconf(libc::_SC_HOST_NAME_MAX) as usize;
+            let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
+            if libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf_size) < 0 {
+                return Err(Error::IO(io::Error::last_os_error()));
+            }
+            let hostname_len = libc::strnlen(buf.as_ptr() as *const libc::c_char, buf_size);
+            buf.set_len(hostname_len);
+            Ok(ffi::CString::new(buf).unwrap().into_string().unwrap())
         }
-        let hostname_len = libc::strnlen(buf.as_ptr() as *const i8, buf_size);
-        buf.set_len(hostname_len);
-        Ok(ffi::CString::new(buf).unwrap().into_string().unwrap())
-    }
 }
 
-/// get windows hostname
-#[cfg(windows)]
-pub fn hostname() -> Result<String, Error>{
+#[cfg(target_family = "windows")]
+pub fn hostname() -> Result<String, Error> {
     use std::process::Command;
     Command::new("hostname")
         .output()
         .map_err(Error::ExecFailed)
         .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
 }
+
 
 /// Get system boottime from unix like system
 #[cfg(not(windows))]
