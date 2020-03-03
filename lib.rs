@@ -19,6 +19,7 @@ use libc::sysctl;
 use std::mem::size_of_val;
 #[cfg(target_os = "macos")]
 use std::ptr::null_mut;
+#[cfg(not(target_os = "windows"))]
 use libc::timeval;
 
 use std::collections::HashMap;
