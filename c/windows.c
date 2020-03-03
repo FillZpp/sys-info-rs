@@ -27,7 +27,7 @@ const char *get_os_release(void) {
 	osvi.dwOSVersionInfoSize = sizeof(osvi);
 
 	if (GetVersionEx(&osvi))
-		snprintf(s, LEN, "%d.%d.%d",
+		snprintf(s, LEN, "%ld.%ld.%ld",
 			 osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
 	else
 		strncpy(s, "unknown", LEN);
@@ -87,7 +87,7 @@ unsigned long get_proc_total(void) {
 
 MemInfo get_mem_info(void) {
 	MEMORYSTATUSEX stat;
-	DWORDLONG size;
+	/* DWORDLONG size; */
 	MemInfo mi;
 	
 	stat.dwLength = sizeof(stat);
