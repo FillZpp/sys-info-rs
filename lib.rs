@@ -5,13 +5,16 @@
 //! And now it can get information of kernel/cpu/memory/disk/load/hostname and so on.
 //!
 
+#[cfg(windows)]
+extern crate winapi;
 extern crate libc;
-
 use std::ffi;
 use std::fmt;
 use std::io::{self, Read};
 use std::fs::File;
 use std::os::raw::c_char;
+#[cfg(target_os = "windows")]
+use winapi::um::sysinfoapi;
 
 #[cfg(target_os = "macos")]
 use libc::sysctl;
@@ -23,6 +26,7 @@ use std::ptr::null_mut;
 use libc::timeval;
 
 use std::collections::HashMap;
+ use std::convert::TryInto;
 
 #[cfg(target_os = "macos")]
 static MAC_CTL_KERN: libc::c_int = 1;
@@ -149,7 +153,7 @@ extern "C" {
     fn get_cpu_speed() -> u64;
 
     fn get_loadavg() -> LoadAvg;
-    fn get_proc_total() -> u64;
+    fn get_proc_total() -> usize;
 
     fn get_mem_info() -> MemInfo;
     fn get_disk_info() -> DiskInfo;
@@ -315,16 +319,14 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
 }
 
 /// Get current processes quantity.
-///
-/// Notice, it temporarily does not support Windows.
-pub fn proc_total() -> Result<u64, Error> {
+pub fn proc_total() -> Result<usize, Error> {
     if cfg!(target_os = "linux") {
         let mut s = String::new();
         File::open("/proc/loadavg")?.read_to_string(&mut s)?;
         s.split(' ')
             .nth(3)
             .and_then(|val| val.split('/').last())
-            .and_then(|val| val.parse::<u64>().ok())
+            .and_then(|val| val.parse::<usize>().ok())
             .ok_or(Error::Unknown)
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_proc_total() })
@@ -414,7 +416,8 @@ pub fn hostname() -> Result<String, Error> {
         .map(|output| String::from_utf8(output.stdout).unwrap().trim().to_string())
 }
 
-/// Get system boottime
+
+/// Get system boottime from unix like system
 #[cfg(not(windows))]
 pub fn boottime() -> Result<timeval, Error> {
     let mut bt = timeval {
@@ -445,6 +448,20 @@ pub fn boottime() -> Result<timeval, Error> {
     }
 
     Ok(bt)
+}
+
+// get boottime from windows, the  tv_usec is in microsecond = 1000 * millisecond, i just simple set it to 0
+// if you need this value, you can just simply multiply since_boot by 1000...
+#[cfg(windows)]
+pub fn boottime() -> Result<timeval, Error> {
+	let mut bt = timeval {
+        tv_sec: 0,
+        tv_usec: 0
+    };
+	
+	let since_boot: u64 = unsafe { sysinfoapi::GetTickCount64() };
+	bt.tv_sec = (since_boot / 1000).try_into().unwrap();
+	Ok(bt)
 }
 
 #[cfg(test)]
@@ -519,6 +536,13 @@ mod test {
         println!("boottime(): {} {}", bt.tv_sec, bt.tv_usec);
         assert!(bt.tv_sec > 0 || bt.tv_usec > 0);
     }
+	
+	#[test]
+	#[cfg(windows)]
+	pub fn test_boottime(){
+		let bt = boottime().unwrap();
+		assert!(bt.tv_sec > 0);
+	}
 
     #[test]
     #[cfg(linux)]

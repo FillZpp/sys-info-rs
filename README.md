@@ -23,3 +23,4 @@ and add this to crate root:
 extern crate sys_info;
 ```
 
+for more usage example, see the source file in test folder.

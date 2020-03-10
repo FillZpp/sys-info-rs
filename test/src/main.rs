@@ -7,6 +7,7 @@ fn main() {
 
     println!("os: {} {}", os_type().unwrap(), os_release().unwrap());
     println!("cpu: {} cores, {} MHz", cpu_num().unwrap(), cpu_speed().unwrap());
+	//the proc total will work correctly on windows-amd64
     println!("proc total: {}", proc_total().unwrap());
     let load = loadavg().unwrap();
     println!("load: {} {} {}", load.one, load.five, load.fifteen);
@@ -17,6 +18,7 @@ fn main() {
     let disk = disk_info().unwrap();
     println!("disk: total {} KB, free {} KB", disk.total, disk.free);
     println!("hostname: {}", hostname().unwrap());
+	//now boottime works perfectly on windows-amd64 and linux-amd64
     let t = boottime().unwrap();
     println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
 

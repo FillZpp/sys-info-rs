@@ -3,9 +3,9 @@ os:
   - osx
 language: rust
 rust:
-  - stable
-  - beta
-  - nightly
+    -stable
+    -beta
+    -nightly
 cache: rust
 script:
   - cargo test --all --verbose
