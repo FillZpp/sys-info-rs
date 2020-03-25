@@ -9,6 +9,10 @@ fn main() {
     let mut builder = cc::Build::new();
     match target_os {
         "linux" | "android" | "androideabi" => builder.file("c/linux.c"),
+        "illumos" | "solaris" => {
+            println!("cargo:rustc-link-lib=kstat");
+            return;
+        }
         "darwin" | "ios" => builder.file("c/macos.c"),
         "windows" => {
             println!("cargo:rustc-flags=-l psapi");

@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.6.0
+
+- Support illumos and Solaris systems
+
 ## 0.5.10
 
 - Cast gethostname() arguments to a proper type.
