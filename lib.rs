@@ -11,7 +11,7 @@ use std::ffi;
 use std::fmt;
 use std::io::{self, Read};
 use std::fs::File;
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_int, c_double};
 
 #[cfg(target_os = "macos")]
 use libc::sysctl;
@@ -21,8 +21,13 @@ use std::mem::size_of_val;
 use std::ptr::null_mut;
 #[cfg(not(target_os = "windows"))]
 use libc::timeval;
-
+#[cfg(target_os = "solaris")]
+use std::time::SystemTime;
+#[cfg(target_os = "linux")]
 use std::collections::HashMap;
+
+#[cfg(target_os = "solaris")]
+mod kstat;
 
 #[cfg(target_os = "macos")]
 static MAC_CTL_KERN: libc::c_int = 1;
@@ -98,6 +103,8 @@ pub enum Error {
     UnsupportedSystem,
     ExecFailed(io::Error),
     IO(io::Error),
+    SystemTime(std::time::SystemTimeError),
+    General(Box<dyn std::error::Error>),
     Unknown,
 }
 
@@ -108,6 +115,8 @@ impl fmt::Display for Error {
             UnsupportedSystem => write!(fmt, "System is not supported"),
             ExecFailed(ref e) => write!(fmt, "Execution failed: {}", e),
             IO(ref e) => write!(fmt, "IO error: {}", e),
+            SystemTime(ref e) => write!(fmt, "System time error: {}", e),
+            General(ref e) => write!(fmt, "Error: {}", e),
             Unknown => write!(fmt, "An unknown error occurred"),
         }
     }
@@ -120,6 +129,8 @@ impl std::error::Error for Error {
             UnsupportedSystem => "unsupported system",
             ExecFailed(_) => "execution failed",
             IO(_) => "io error",
+            SystemTime(_) => "system time",
+            General(_) => "general error",
             Unknown => "unknown error",
         }
     }
@@ -130,6 +141,8 @@ impl std::error::Error for Error {
             UnsupportedSystem => None,
             ExecFailed(ref e) => Some(e),
             IO(ref e) => Some(e),
+            SystemTime(ref e) => Some(e),
+            General(ref e) => Some(e.as_ref()),
             Unknown => None,
         }
     }
@@ -141,17 +154,33 @@ impl From<io::Error> for Error {
     }
 }
 
+impl From<std::time::SystemTimeError> for Error {
+    fn from(e: std::time::SystemTimeError) -> Error {
+        Error::SystemTime(e)
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for Error {
+    fn from(e: Box<dyn std::error::Error>) -> Error {
+        Error::General(e)
+    }
+}
+
 extern "C" {
     fn get_os_type() -> *const i8;
     fn get_os_release() -> *const i8;
 
     fn get_cpu_num() -> u32;
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_cpu_speed() -> u64;
 
     fn get_loadavg() -> LoadAvg;
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_proc_total() -> u64;
 
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_mem_info() -> MemInfo;
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn get_disk_info() -> DiskInfo;
 }
 
@@ -168,6 +197,8 @@ pub fn os_type() -> Result<String, Error> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         let typ = unsafe { ffi::CStr::from_ptr(get_os_type() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
+    } else if cfg!(target_os = "solaris") {
+        Ok("solaris".to_string())
     } else {
         Err(Error::UnsupportedSystem)
     }
@@ -185,6 +216,20 @@ pub fn os_release() -> Result<String, Error> {
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
+    } else if cfg!(target_os = "solaris") {
+        let release: Option<String> = unsafe {
+            let mut name: libc::utsname = std::mem::zeroed();
+            if libc::uname(&mut name) < 0 {
+                None
+            } else {
+                let cstr = std::ffi::CStr::from_ptr(name.release.as_mut_ptr());
+                Some(cstr.to_string_lossy().to_string())
+            }
+        };
+        match release {
+            None => Err(Error::Unknown),
+            Some(release) => Ok(release),
+        }
     } else {
         Err(Error::UnsupportedSystem)
     }
@@ -256,7 +301,14 @@ fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
 ///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, Error> {
-    if cfg!(unix) || cfg!(windows) {
+    if cfg!(target_os = "solaris") {
+        let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+        if ret < 1 || ret > std::u32::MAX as i64 {
+            Err(Error::Unknown)
+        } else {
+            Ok(ret as u32)
+        }
+    } else if cfg!(unix) || cfg!(windows) {
         unsafe { Ok(get_cpu_num()) }
     } else {
         Err(Error::UnsupportedSystem)
@@ -267,7 +319,12 @@ pub fn cpu_num() -> Result<u32, Error> {
 ///
 /// Such as 2500, that is 2500 MHz.
 pub fn cpu_speed() -> Result<u64, Error> {
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "solaris")]
+    {
+       Ok(kstat::cpu_mhz()?)
+    }
+    #[cfg(target_os = "linux")]
+    {
         // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
         let mut s = String::new();
         File::open("/proc/cpuinfo")?.read_to_string(&mut s)?;
@@ -283,10 +340,13 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .and_then(|val| val.replace("MHz", "").trim().parse::<f64>().ok())
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
-
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
         unsafe { Ok(get_cpu_speed()) }
-    } else {
+    }
+    #[cfg(not(any(target_os = "solaris", target_os = "linux", target_os = "macos", target_os = "windows")))]
+    {
         Err(Error::UnsupportedSystem)
     }
 }
@@ -307,6 +367,17 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
             five: loads[1],
             fifteen: loads[2],
         })
+    } else if cfg!(target_os = "solaris") {
+        let mut l: [c_double; 3] = [0f64; 3];
+        if unsafe { libc::getloadavg(l.as_mut_ptr(), l.len() as c_int) } < 3 {
+            Err(Error::Unknown)
+        } else {
+            Ok(LoadAvg {
+                one: l[0],
+                five: l[1],
+                fifteen: l[2],
+            })
+        }
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_loadavg() })
     } else {
@@ -315,10 +386,13 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
 }
 
 /// Get current processes quantity.
-///
-/// Notice, it temporarily does not support Windows.
 pub fn proc_total() -> Result<u64, Error> {
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "solaris")]
+    {
+        Ok(kstat::nproc()?)
+    }
+    #[cfg(target_os = "linux")]
+    {
         let mut s = String::new();
         File::open("/proc/loadavg")?.read_to_string(&mut s)?;
         s.split(' ')
@@ -326,19 +400,33 @@ pub fn proc_total() -> Result<u64, Error> {
             .and_then(|val| val.split('/').last())
             .and_then(|val| val.parse::<u64>().ok())
             .ok_or(Error::Unknown)
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
         Ok(unsafe { get_proc_total() })
-    } else {
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "macos", target_os = "windows")))]
+    {
         Err(Error::UnsupportedSystem)
     }
 }
 
+#[cfg(target_os = "solaris")]
+fn pagesize() -> Result<u32, Error> {
+    let ret = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    if ret < 1 || ret > std::u32::MAX as i64 {
+        Err(Error::Unknown)
+    } else {
+        Ok(ret as u32)
+    }
+}
 
 /// Get memory information.
 ///
 /// On Mac OS X and Windows, the buffers and cached variables of the MemInfo returned are zero.
 pub fn mem_info() -> Result<MemInfo, Error> {
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "linux")]
+    {
         let mut s = String::new();
         File::open("/proc/meminfo")?.read_to_string(&mut s)?;
         let mut meminfo_hashmap = HashMap::new();
@@ -372,9 +460,27 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_total,
             swap_free,
         })
-    } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+    }
+    #[cfg(target_os = "solaris")]
+    {
+        let pagesize = pagesize()? as u64;
+        let pages = kstat::pages()?;
+        return Ok(MemInfo {
+            total: pages.physmem * pagesize / 1024,
+            avail: 0,
+            free: pages.freemem * pagesize / 1024,
+            cached: 0,
+            buffers: 0,
+            swap_total: 0,
+            swap_free: 0,
+        });
+    }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    {
         Ok(unsafe { get_mem_info() })
-    } else {
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "macos", target_os = "windows")))]
+    {
         Err(Error::UnsupportedSystem)
     }
 }
@@ -383,9 +489,12 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    if cfg!(target_os = "linux") || cfg!(target_os = "macos") || cfg!(target_os = "windows") {
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    {
         Ok(unsafe { get_disk_info() })
-    } else {
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    {
         Err(Error::UnsupportedSystem)
     }
 }
@@ -442,6 +551,16 @@ pub fn boottime() -> Result<timeval, Error> {
                    &mut bt as *mut timeval as *mut libc::c_void,
                    &mut size, null_mut(), 0);
         }
+    }
+    #[cfg(target_os = "solaris")]
+    {
+        let start = kstat::boot_time()?;
+        let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?;
+        let now = now.as_secs();
+        if now < start {
+            return Err(Error::General("time went backwards".into()));
+        }
+        bt.tv_sec = (now - start) as i64;
     }
 
     Ok(bt)
@@ -500,6 +619,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(not(target_os = "solaris"))]
     pub fn test_disk_info() {
         let info = disk_info().unwrap();
         println!("disk_info(): {:?}", info);

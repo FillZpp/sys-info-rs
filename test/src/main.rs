@@ -14,8 +14,10 @@ fn main() {
     println!("mem: total {} KB, free {} KB, avail {} KB, buffers {} KB, cached {} KB",
              mem.total, mem.free, mem.avail, mem.buffers, mem.cached);
     println!("swap: total {} KB, free {} KB", mem.swap_total, mem.swap_free);
-    let disk = disk_info().unwrap();
-    println!("disk: total {} KB, free {} KB", disk.total, disk.free);
+    #[cfg(not(target_os = "solaris"))] {
+        let disk = disk_info().unwrap();
+        println!("disk: total {} KB, free {} KB", disk.total, disk.free);
+    }
     println!("hostname: {}", hostname().unwrap());
     let t = boottime().unwrap();
     println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
