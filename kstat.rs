@@ -123,7 +123,8 @@ mod wrapper {
                     stepping: false,
                 })
             } else {
-                Err("kstat_open(3KSTAT) failed".into())
+                let e = std::io::Error::last_os_error();
+                Err(format!("kstat_open(3KSTAT) failed: {}", e).into())
             }
         }
 

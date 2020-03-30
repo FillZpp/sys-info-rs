@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.6.1
+
+- Restore `Send` trait to `Error` for wrapping with `error-chain`
+
 ## 0.6.0
 
 - Support illumos and Solaris systems

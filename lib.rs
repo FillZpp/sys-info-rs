@@ -104,7 +104,7 @@ pub enum Error {
     ExecFailed(io::Error),
     IO(io::Error),
     SystemTime(std::time::SystemTimeError),
-    General(Box<dyn std::error::Error>),
+    General(String),
     Unknown,
 }
 
@@ -142,7 +142,7 @@ impl std::error::Error for Error {
             ExecFailed(ref e) => Some(e),
             IO(ref e) => Some(e),
             SystemTime(ref e) => Some(e),
-            General(ref e) => Some(e.as_ref()),
+            General(_) => None,
             Unknown => None,
         }
     }
@@ -162,7 +162,7 @@ impl From<std::time::SystemTimeError> for Error {
 
 impl From<Box<dyn std::error::Error>> for Error {
     fn from(e: Box<dyn std::error::Error>) -> Error {
-        Error::General(e)
+        Error::General(e.to_string())
     }
 }
 
