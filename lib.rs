@@ -229,7 +229,7 @@ pub fn os_release() -> Result<String, Error> {
 /// Gets OS release version on Solaris, returning None if not targeting Solaris
 ///
 /// **Note**: the conditional compilation wrap is needed for the internal imports
-//// to `libc` not causing resolution errors on Windows
+/// to `libc` not causing resolution errors on Windows
 #[cfg(target_os = "solaris")]
 fn solaris_os_release() -> Option<String> {
     unsafe {
@@ -329,7 +329,7 @@ pub fn cpu_num() -> Result<u32, Error> {
 /// Gets the logical CPU count on Solaris, returning None if not targeting Solaris
 ///
 /// **Note**: the conditional compilation wrap is needed for the internal imports
-//// to `libc` not causing resolution errors on Windows
+/// to `libc` not causing resolution errors on Windows
 #[cfg(target_os = "solaris")]
 fn solaris_cpu_num() -> Option<u32> {
     let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
@@ -412,7 +412,7 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
 /// Gets the system average load value. on Solaris, returning None if not targeting Solaris
 ///
 /// **Note**: the conditional compilation wrap is needed for the internal imports
-//// to `libc` not causing resolution errors on Windows
+/// to `libc` not causing resolution errors on Windows
 #[cfg(target_os = "solaris")]
 fn solaris_loadavg() -> Option<LoadAvg> {
     let mut l: [c_double; 3] = [0f64; 3];
