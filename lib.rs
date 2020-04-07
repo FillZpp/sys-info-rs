@@ -217,22 +217,35 @@ pub fn os_release() -> Result<String, Error> {
         let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     } else if cfg!(target_os = "solaris") {
-        let release: Option<String> = unsafe {
-            let mut name: libc::utsname = std::mem::zeroed();
-            if libc::uname(&mut name) < 0 {
-                None
-            } else {
-                let cstr = std::ffi::CStr::from_ptr(name.release.as_mut_ptr());
-                Some(cstr.to_string_lossy().to_string())
-            }
-        };
-        match release {
+        match solaris_os_release() {
             None => Err(Error::Unknown),
             Some(release) => Ok(release),
         }
     } else {
         Err(Error::UnsupportedSystem)
     }
+}
+
+/// Gets OS release version on Solaris, returning None if not targeting Solaris
+///
+/// **Note**: the conditional compilation wrap is needed for the internal imports
+//// to `libc` not causing resolution errors on Windows
+#[cfg(target_os = "solaris")]
+fn solaris_os_release() -> Option<String> {
+    unsafe {
+        let mut name: libc::utsname = std::mem::zeroed();
+        if libc::uname(&mut name) < 0 {
+            None
+        } else {
+            let cstr = std::ffi::CStr::from_ptr(name.release.as_mut_ptr());
+            Some(cstr.to_string_lossy().to_string())
+        }
+    }
+}
+
+#[cfg(not(target_os = "solaris"))]
+fn solaris_os_release() -> Option<String> {
+    None
 }
 
 /// Get the os release note of Linux
@@ -302,17 +315,34 @@ fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, Error> {
     if cfg!(target_os = "solaris") {
-        let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
-        if ret < 1 || ret > std::u32::MAX as i64 {
-            Err(Error::Unknown)
-        } else {
-            Ok(ret as u32)
+        match solaris_cpu_num() {
+            Some(ret) => Ok(ret),
+            None => Err(Error::Unknown)
         }
     } else if cfg!(unix) || cfg!(windows) {
         unsafe { Ok(get_cpu_num()) }
     } else {
         Err(Error::UnsupportedSystem)
     }
+}
+
+/// Gets the logical CPU count on Solaris, returning None if not targeting Solaris
+///
+/// **Note**: the conditional compilation wrap is needed for the internal imports
+//// to `libc` not causing resolution errors on Windows
+#[cfg(target_os = "solaris")]
+fn solaris_cpu_num() -> Option<u32> {
+    let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+    if ret < 1 || ret > std::u32::MAX as i64 {
+        None
+    } else {
+        Some(ret as u32)
+    }
+}
+
+#[cfg(not(target_os = "solaris"))]
+fn solaris_cpu_num() -> Option<u32> {
+    None
 }
 
 /// Get cpu speed.
@@ -368,21 +398,38 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
             fifteen: loads[2],
         })
     } else if cfg!(target_os = "solaris") {
-        let mut l: [c_double; 3] = [0f64; 3];
-        if unsafe { libc::getloadavg(l.as_mut_ptr(), l.len() as c_int) } < 3 {
-            Err(Error::Unknown)
-        } else {
-            Ok(LoadAvg {
-                one: l[0],
-                five: l[1],
-                fifteen: l[2],
-            })
+        match solaris_loadavg() {
+            Some(load) => Ok(load),
+            None => Err(Error::Unknown)
         }
     } else if cfg!(target_os = "macos") || cfg!(target_os = "windows") {
         Ok(unsafe { get_loadavg() })
     } else {
         Err(Error::UnsupportedSystem)
     }
+}
+
+/// Gets the system average load value. on Solaris, returning None if not targeting Solaris
+///
+/// **Note**: the conditional compilation wrap is needed for the internal imports
+//// to `libc` not causing resolution errors on Windows
+#[cfg(target_os = "solaris")]
+fn solaris_loadavg() -> Option<LoadAvg> {
+    let mut l: [c_double; 3] = [0f64; 3];
+    if unsafe { libc::getloadavg(l.as_mut_ptr(), l.len() as c_int) } < 3 {
+        None
+    } else {
+        Some(LoadAvg {
+            one: l[0],
+            five: l[1],
+            fifteen: l[2],
+        })
+    }
+}
+
+#[cfg(not(target_os = "solaris"))]
+fn solaris_loadavg() -> Option<LoadAvg> {
+    None
 }
 
 /// Get current processes quantity.
