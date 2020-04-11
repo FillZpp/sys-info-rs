@@ -80,18 +80,6 @@ unsigned long get_cpu_speed(void) {
 	return speed;
 }
 
-LoadAvg get_loadavg(void) {
-	double loads[3];
-	LoadAvg la;
-	
-	getloadavg(loads, 3);
-	la.one = loads[0];
-	la.five = loads[1];
-	la.fifteen = loads[2];
-	
-	return la;
-}
-
 unsigned long get_proc_total(void) {
 	int mib[3];
 	size_t len;

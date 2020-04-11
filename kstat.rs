@@ -1,4 +1,4 @@
-#![cfg(target_os = "solaris")]
+#![cfg(any(target_os = "solaris", target_os = "illumos"))]
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
