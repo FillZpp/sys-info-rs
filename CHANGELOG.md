@@ -3,6 +3,7 @@
 ## 0.6.1
 
 - Restore `Send` trait to `Error` for wrapping with `error-chain`
+- Use cfg attribute instead of cfg! macro, which fixes Windows build errors in v0.6.0
 
 ## 0.6.0
 
