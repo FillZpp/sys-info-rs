@@ -30,7 +30,7 @@ const char *get_os_type(void) {
 	s = malloc(LEN);
 	len = sizeof(buf);
 	
-	if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
+	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1)
 		strncpy(s, "Darwin", len);
 	strncpy(s, buf, len);
 
@@ -47,7 +47,7 @@ const char *get_os_release(void) {
 	s = malloc(LEN);
 	len = sizeof(buf);
 
-	if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
+	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1)
 		strncpy(s, "Unknown", len);
 	strncpy(s, buf, len);
 
