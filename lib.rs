@@ -11,16 +11,16 @@ use std::ffi;
 use std::fmt;
 use std::io::{self, Read};
 use std::fs::File;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "freebsd"))]
 use std::os::raw::c_char;
 #[cfg(not(any(target_os = "windows", target_os = "linux")))]
 use std::os::raw::{c_int, c_double};
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
 use libc::sysctl;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
 use std::mem::size_of_val;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
 use std::ptr::null_mut;
 #[cfg(not(target_os = "windows"))]
 use libc::timeval;
@@ -32,10 +32,10 @@ use std::collections::HashMap;
 #[cfg(any(target_os = "solaris", target_os = "illumos"))]
 mod kstat;
 
-#[cfg(target_os = "macos")]
-static MAC_CTL_KERN: libc::c_int = 1;
-#[cfg(target_os = "macos")]
-static MAC_KERN_BOOTTIME: libc::c_int = 21;
+#[cfg(any(target_os = "macos", target_os="freebsd"))]
+static OS_CTL_KERN: libc::c_int = 1;
+#[cfg(any(target_os = "macos", target_os="freebsd"))]
+static OS_KERN_BOOTTIME: libc::c_int = 21;
 
 /// System load average value.
 #[repr(C)]
@@ -172,22 +172,22 @@ impl From<Box<dyn std::error::Error>> for Error {
 extern "C" {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_os_type() -> *const i8;
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_os_release() -> *const i8;
 
-    #[cfg(all(not(any(target_os = "solaris", target_os = "illumos")), any(unix, windows)))]
+    #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd")), any(unix, windows)))]
     fn get_cpu_num() -> u32;
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_cpu_speed() -> u64;
 
     #[cfg(target_os = "windows")]
     fn get_loadavg() -> LoadAvg;
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_proc_total() -> u64;
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_mem_info() -> MemInfo;
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_disk_info() -> DiskInfo;
 }
 
@@ -216,7 +216,11 @@ pub fn os_type() -> Result<String, Error> {
     {
         Ok("illumos".to_string())
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos")))]
+    #[cfg(target_os = "freebsd")]
+    {
+        Ok("freebsd".to_string())
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -233,7 +237,7 @@ pub fn os_release() -> Result<String, Error> {
         s.pop(); // pop '\n'
         Ok(s)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
         let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
@@ -254,7 +258,7 @@ pub fn os_release() -> Result<String, Error> {
             Some(release) => Ok(release),
         }
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos")))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -326,7 +330,7 @@ fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
 ///
 /// Notice, it returns the logical cpu quantity.
 pub fn cpu_num() -> Result<u32, Error> {
-    #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+    #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd"))]
     {
         let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
         if ret < 1 || ret > std::u32::MAX as i64 {
@@ -335,7 +339,7 @@ pub fn cpu_num() -> Result<u32, Error> {
             Ok(ret as u32)
         }
     }
-    #[cfg(all(not(any(target_os = "solaris", target_os = "illumos")), any(unix, windows)))]
+    #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os="freebsd")), any(unix, windows)))]
     {
         unsafe { Ok(get_cpu_num()) }
     }
@@ -371,11 +375,11 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
         unsafe { Ok(get_cpu_speed()) }
     }
-    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -399,7 +403,7 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
             fifteen: loads[2],
         })
     }
-    #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "macos"))]
+    #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "freebsd"))]
     {
         let mut l: [c_double; 3] = [0f64; 3];
         if unsafe { libc::getloadavg(l.as_mut_ptr(), l.len() as c_int) } < 3 {
@@ -416,7 +420,7 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
     {
         Ok(unsafe { get_loadavg() })
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -438,11 +442,11 @@ pub fn proc_total() -> Result<u64, Error> {
             .and_then(|val| val.parse::<u64>().ok())
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
         Ok(unsafe { get_proc_total() })
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -512,11 +516,11 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_free: 0,
         });
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
         Ok(unsafe { get_mem_info() })
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -526,11 +530,11 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
         Ok(unsafe { get_disk_info() })
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -579,9 +583,9 @@ pub fn boottime() -> Result<timeval, Error> {
         bt.tv_sec = secs[0] as libc::time_t;
         bt.tv_usec = secs[1] as libc::suseconds_t;
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os="freebsd"))]
     {
-        let mut mib = [MAC_CTL_KERN, MAC_KERN_BOOTTIME];
+        let mut mib = [OS_CTL_KERN, OS_KERN_BOOTTIME];
         let mut size: libc::size_t = size_of_val(&bt) as libc::size_t;
         unsafe {
             sysctl(&mut mib[0], 2,

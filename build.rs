@@ -18,6 +18,10 @@ fn main() {
             println!("cargo:rustc-flags=-l psapi");
             builder.file("c/windows.c")
         },
+	"freebsd" => {
+            println!("cargo:rustc-flags=-l pthread");
+            builder.file("c/freebsd.c")
+        },
         _ => panic!("unsupported system: {}", target_os)
     };
     builder.compile("info");
