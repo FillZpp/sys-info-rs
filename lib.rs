@@ -242,8 +242,15 @@ pub fn os_release() -> Result<String, Error> {
     }
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
-        let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
-        Ok(String::from_utf8_lossy(typ).into_owned())
+        unsafe {
+	    let rp = get_os_release() as *const c_char;
+	    if rp == std::ptr::null() {
+		Err(Error::Unknown)
+	    } else {
+		let typ = ffi::CStr::from_ptr(rp).to_bytes();
+		Ok(String::from_utf8_lossy(typ).into_owned())
+	    }
+	}
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
     {
