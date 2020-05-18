@@ -33,10 +33,14 @@ uint64_t get_cpu_speed(void) {
 	size_t len;
 	int error;
 
+#if defined(__i386__) || defined(__amd64__)
 	len = sizeof(tsc_freq);
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
-		return (1000);
+		return (0);
+#else
+	tsc_freq = 1000 * 1000 * 1000;
+#endif
 	return (tsc_freq / 1000 / 1000);
 }
 

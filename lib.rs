@@ -375,9 +375,17 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         unsafe { Ok(get_cpu_speed()) }
+    }
+    #[cfg(any(target_os = "freebsd"))]
+    {
+	let res: u64 = unsafe { get_cpu_speed() };
+	match res {
+	    0 => Err(Error::IO(io::Error::last_os_error())),
+	    _ => Ok(res),
+	}
     }
     #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
