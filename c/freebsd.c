@@ -55,17 +55,17 @@ uint64_t get_proc_total(void) {
 
 	error = sysctl(mib, nitems(mib), NULL, &len, NULL, 0);
 	if (error == -1)
-		return (42);
+		return (0);
 
 	kp = malloc(len);
 	if (kp == NULL)
-		return (42);
+		return (0);
 	memset(kp, 0, len);
 
 	error = sysctl(mib, nitems(mib), kp, &len, NULL, 0);
 	if (error == -1) {
 		free(kp);
-		return (42);
+		return (0);
 	}
 
 	for (count = 0, kpp = kp; (char *)kpp < (char *)kp + len; kpp++) {

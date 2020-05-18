@@ -453,9 +453,17 @@ pub fn proc_total() -> Result<u64, Error> {
             .and_then(|val| val.parse::<u64>().ok())
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_proc_total() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let res: u64 = unsafe { get_proc_total() };
+	match res {
+	    0 => Err(Error::IO(io::Error::last_os_error())),
+	    _ => Ok(res),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
