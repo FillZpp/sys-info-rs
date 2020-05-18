@@ -334,7 +334,7 @@ pub fn cpu_num() -> Result<u32, Error> {
     {
         let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
         if ret < 1 || ret > std::u32::MAX as i64 {
-            Err(Error::Unknown)
+            Err(Error::IO(io::Error::last_os_error()))
         } else {
             Ok(ret as u32)
         }
