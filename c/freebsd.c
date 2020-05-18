@@ -123,17 +123,16 @@ fail:
 	return (-1);
 }
 
-DiskInfo get_disk_info(void) {
-	DiskInfo di;
+int32_t get_disk_info_freebsd(DiskInfo *di) {
 	struct statfs *sfs, *sf;
 	int i, nmounts;
 	uint64_t dtotal, dfree;
+	int32_t res;
 
-	di.total = 0;
-	di.free = 0;
 	dtotal = 0;
 	dfree = 0;
 	sfs = NULL;
+	res = -1;
 
 	nmounts = getfsstat(NULL, 0, MNT_WAIT);
 	if (nmounts == -1)
@@ -153,10 +152,11 @@ DiskInfo get_disk_info(void) {
 		dfree += sf->f_bfree * sf->f_bsize;
 	}
 
-	di.total = dtotal / 1000;
-	di.free = dfree / 1000;
+	di->total = dtotal / 1000;
+	di->free = dfree / 1000;
+	res = 0;
 
 fail:
 	free(sfs);
-	return (di);
+	return (res);
 }

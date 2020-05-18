@@ -190,8 +190,10 @@ extern "C" {
     #[cfg(target_os = "freebsd")]
     fn get_mem_info_freebsd(mi: &mut MemInfo) ->i32;
 
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn get_disk_info() -> DiskInfo;
+    #[cfg(target_os = "freebsd")]
+    fn get_disk_info_freebsd(di: &mut DiskInfo) -> i32;
 }
 
 
@@ -567,9 +569,19 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_disk_info() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let mut di:DiskInfo = DiskInfo{total: 0, free: 0};
+	let res: i32 = unsafe { get_disk_info_freebsd(&mut di) };
+	match res {
+	    -1 => Err(Error::IO(io::Error::last_os_error())),
+	    0 => Ok(di),
+	    _ => Err(Error::Unknown),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
