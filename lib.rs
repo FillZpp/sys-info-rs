@@ -185,8 +185,11 @@ extern "C" {
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_proc_total() -> u64;
 
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_mem_info() -> MemInfo;
+    #[cfg(target_os = "freebsd")]
+    fn get_mem_info_freebsd(mi: &mut MemInfo) ->i32;
+
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_disk_info() -> DiskInfo;
 }
@@ -524,9 +527,20 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_free: 0,
         });
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_mem_info() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let mut mi:MemInfo = MemInfo{total: 0, free: 0, avail: 0, buffers: 0,
+				     cached: 0, swap_total: 0, swap_free: 0};
+	let res: i32 = unsafe { get_mem_info_freebsd(&mut mi) };
+	match res {
+	    -1 => Err(Error::IO(io::Error::last_os_error())),
+	    0 => Ok(mi),
+	    _ => Err(Error::Unknown),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {

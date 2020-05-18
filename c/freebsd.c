@@ -77,8 +77,7 @@ uint64_t get_proc_total(void) {
 	return (count);
 }
 
-MemInfo get_mem_info(void) {
-	struct MemInfo mi;
+int32_t get_mem_info_freebsd(struct MemInfo *mi) {
 	struct vmtotal vmt;
 	struct xswdev xs;
 	int mib[3], error, i;
@@ -89,13 +88,13 @@ MemInfo get_mem_info(void) {
 	error = sysctlbyname("hw.realmem", &res, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.total = res / 1024;
+	mi->total = res / 1024;
 
 	len = sizeof(res);
 	error = sysctlbyname("hw.physmem", &res, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.avail = res / 1024;
+	mi->avail = res / 1024;
 
 	mib[0] = CTL_VM;
 	mib[1] = VM_TOTAL;
@@ -103,13 +102,8 @@ MemInfo get_mem_info(void) {
 	error = sysctl(mib, 2, &vmt, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.free = vmt.t_free * PAGE_SIZE / 1024;
+	mi->free = vmt.t_free * PAGE_SIZE / 1024;
 
-	mi.buffers = 0;
-	mi.cached = 0;
-
-	mi.swap_total = 0;
-	mi.swap_free = 0;
 	len = nitems(mib);
 	if (sysctlnametomib("vm.swap_info", mib, &len) == -1)
 		goto fail;
@@ -119,15 +113,14 @@ MemInfo get_mem_info(void) {
 		error = sysctl(mib, 3, &xs, &len, NULL, 0);
 		if (error == -1)
 			break;
-		mi.swap_total += (uint64_t)xs.xsw_nblks * PAGE_SIZE / 1024;
-		mi.swap_free += ((uint64_t)xs.xsw_nblks - xs.xsw_used) *
+		mi->swap_total += (uint64_t)xs.xsw_nblks * PAGE_SIZE / 1024;
+		mi->swap_free += ((uint64_t)xs.xsw_nblks - xs.xsw_used) *
 		    PAGE_SIZE / 1024;
 	}
-	return (mi);
+	return (0);
 
 fail:
-	memset(&mi, 0, sizeof(mi));
-	return (mi);
+	return (-1);
 }
 
 DiskInfo get_disk_info(void) {
