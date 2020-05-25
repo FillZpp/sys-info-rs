@@ -185,10 +185,15 @@ extern "C" {
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_proc_total() -> u64;
 
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_mem_info() -> MemInfo;
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(target_os = "freebsd")]
+    fn get_mem_info_freebsd(mi: &mut MemInfo) ->i32;
+
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn get_disk_info() -> DiskInfo;
+    #[cfg(target_os = "freebsd")]
+    fn get_disk_info_freebsd(di: &mut DiskInfo) -> i32;
 }
 
 
@@ -239,8 +244,15 @@ pub fn os_release() -> Result<String, Error> {
     }
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     {
-        let typ = unsafe { ffi::CStr::from_ptr(get_os_release() as *const c_char).to_bytes() };
-        Ok(String::from_utf8_lossy(typ).into_owned())
+        unsafe {
+	    let rp = get_os_release() as *const c_char;
+	    if rp == std::ptr::null() {
+		Err(Error::Unknown)
+	    } else {
+		let typ = ffi::CStr::from_ptr(rp).to_bytes();
+		Ok(String::from_utf8_lossy(typ).into_owned())
+	    }
+	}
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
     {
@@ -334,7 +346,7 @@ pub fn cpu_num() -> Result<u32, Error> {
     {
         let ret = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
         if ret < 1 || ret > std::u32::MAX as i64 {
-            Err(Error::Unknown)
+            Err(Error::IO(io::Error::last_os_error()))
         } else {
             Ok(ret as u32)
         }
@@ -375,9 +387,17 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         unsafe { Ok(get_cpu_speed()) }
+    }
+    #[cfg(any(target_os = "freebsd"))]
+    {
+	let res: u64 = unsafe { get_cpu_speed() };
+	match res {
+	    0 => Err(Error::IO(io::Error::last_os_error())),
+	    _ => Ok(res),
+	}
     }
     #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
@@ -442,9 +462,17 @@ pub fn proc_total() -> Result<u64, Error> {
             .and_then(|val| val.parse::<u64>().ok())
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_proc_total() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let res: u64 = unsafe { get_proc_total() };
+	match res {
+	    0 => Err(Error::IO(io::Error::last_os_error())),
+	    _ => Ok(res),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
@@ -516,9 +544,20 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_free: 0,
         });
     }
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_mem_info() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let mut mi:MemInfo = MemInfo{total: 0, free: 0, avail: 0, buffers: 0,
+				     cached: 0, swap_total: 0, swap_free: 0};
+	let res: i32 = unsafe { get_mem_info_freebsd(&mut mi) };
+	match res {
+	    -1 => Err(Error::IO(io::Error::last_os_error())),
+	    0 => Ok(mi),
+	    _ => Err(Error::Unknown),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
@@ -530,9 +569,19 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     {
         Ok(unsafe { get_disk_info() })
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+	let mut di:DiskInfo = DiskInfo{total: 0, free: 0};
+	let res: i32 = unsafe { get_disk_info_freebsd(&mut di) };
+	match res {
+	    -1 => Err(Error::IO(io::Error::last_os_error())),
+	    0 => Ok(di),
+	    _ => Err(Error::Unknown),
+	}
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
     {
@@ -582,15 +631,20 @@ pub fn boottime() -> Result<timeval, Error> {
             .collect::<Vec<f64>>();
         bt.tv_sec = secs[0] as libc::time_t;
         bt.tv_usec = secs[1] as libc::suseconds_t;
+	Ok(bt)
     }
     #[cfg(any(target_os = "macos", target_os="freebsd"))]
     {
         let mut mib = [OS_CTL_KERN, OS_KERN_BOOTTIME];
         let mut size: libc::size_t = size_of_val(&bt) as libc::size_t;
         unsafe {
-            sysctl(&mut mib[0], 2,
+            if sysctl(&mut mib[0], 2,
                    &mut bt as *mut timeval as *mut libc::c_void,
-                   &mut size, null_mut(), 0);
+                   &mut size, null_mut(), 0) == -1 {
+		Err(Error::IO(io::Error::last_os_error()))
+	    } else {
+		Ok(bt)
+	    }
         }
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
@@ -602,9 +656,8 @@ pub fn boottime() -> Result<timeval, Error> {
             return Err(Error::General("time went backwards".into()));
         }
         bt.tv_sec = (now - start) as i64;
+	Ok(bt)
     }
-
-    Ok(bt)
 }
 
 #[cfg(test)]

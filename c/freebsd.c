@@ -28,19 +28,23 @@ const char *get_os_release(void) {
 	return (os_release);
 }
 
-unsigned long get_cpu_speed(void) {
+uint64_t get_cpu_speed(void) {
 	uint64_t tsc_freq;
 	size_t len;
 	int error;
 
+#if defined(__i386__) || defined(__amd64__)
 	len = sizeof(tsc_freq);
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
-		return (1000);
+		return (0);
+#else
+	tsc_freq = 1000 * 1000 * 1000;
+#endif
 	return (tsc_freq / 1000 / 1000);
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
 	struct kinfo_proc *kp, *kpp;
 	int mib[3], count, error;
 	size_t len;
@@ -51,17 +55,17 @@ unsigned long get_proc_total(void) {
 
 	error = sysctl(mib, nitems(mib), NULL, &len, NULL, 0);
 	if (error == -1)
-		return (42);
+		return (0);
 
 	kp = malloc(len);
 	if (kp == NULL)
-		return (42);
+		return (0);
 	memset(kp, 0, len);
 
 	error = sysctl(mib, nitems(mib), kp, &len, NULL, 0);
 	if (error == -1) {
 		free(kp);
-		return (42);
+		return (0);
 	}
 
 	for (count = 0, kpp = kp; (char *)kpp < (char *)kp + len; kpp++) {
@@ -73,8 +77,7 @@ unsigned long get_proc_total(void) {
 	return (count);
 }
 
-MemInfo get_mem_info(void) {
-	struct MemInfo mi;
+int32_t get_mem_info_freebsd(struct MemInfo *mi) {
 	struct vmtotal vmt;
 	struct xswdev xs;
 	int mib[3], error, i;
@@ -85,13 +88,13 @@ MemInfo get_mem_info(void) {
 	error = sysctlbyname("hw.realmem", &res, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.total = res / 1024;
+	mi->total = res / 1024;
 
 	len = sizeof(res);
 	error = sysctlbyname("hw.physmem", &res, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.avail = res / 1024;
+	mi->avail = res / 1024;
 
 	mib[0] = CTL_VM;
 	mib[1] = VM_TOTAL;
@@ -99,13 +102,8 @@ MemInfo get_mem_info(void) {
 	error = sysctl(mib, 2, &vmt, &len, NULL, 0);
 	if (error == -1)
 		goto fail;
-	mi.free = vmt.t_free * PAGE_SIZE / 1024;
+	mi->free = vmt.t_free * PAGE_SIZE / 1024;
 
-	mi.buffers = 0;
-	mi.cached = 0;
-
-	mi.swap_total = 0;
-	mi.swap_free = 0;
 	len = nitems(mib);
 	if (sysctlnametomib("vm.swap_info", mib, &len) == -1)
 		goto fail;
@@ -115,28 +113,26 @@ MemInfo get_mem_info(void) {
 		error = sysctl(mib, 3, &xs, &len, NULL, 0);
 		if (error == -1)
 			break;
-		mi.swap_total += (uint64_t)xs.xsw_nblks * PAGE_SIZE / 1024;
-		mi.swap_free += ((uint64_t)xs.xsw_nblks - xs.xsw_used) *
+		mi->swap_total += (uint64_t)xs.xsw_nblks * PAGE_SIZE / 1024;
+		mi->swap_free += ((uint64_t)xs.xsw_nblks - xs.xsw_used) *
 		    PAGE_SIZE / 1024;
 	}
-	return (mi);
+	return (0);
 
 fail:
-	memset(&mi, 0, sizeof(mi));
-	return (mi);
+	return (-1);
 }
 
-DiskInfo get_disk_info(void) {
-	DiskInfo di;
+int32_t get_disk_info_freebsd(DiskInfo *di) {
 	struct statfs *sfs, *sf;
 	int i, nmounts;
 	uint64_t dtotal, dfree;
+	int32_t res;
 
-	di.total = 0;
-	di.free = 0;
 	dtotal = 0;
 	dfree = 0;
 	sfs = NULL;
+	res = -1;
 
 	nmounts = getfsstat(NULL, 0, MNT_WAIT);
 	if (nmounts == -1)
@@ -156,10 +152,11 @@ DiskInfo get_disk_info(void) {
 		dfree += sf->f_bfree * sf->f_bsize;
 	}
 
-	di.total = dtotal / 1000;
-	di.free = dfree / 1000;
+	di->total = dtotal / 1000;
+	di->free = dfree / 1000;
+	res = 0;
 
 fail:
 	free(sfs);
-	return (di);
+	return (res);
 }
