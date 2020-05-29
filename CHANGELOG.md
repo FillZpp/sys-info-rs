@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 0.7.0
+
+- FreeBSD port.
+
 ## 0.6.1
 
 - Restore `Send` trait to `Error` for wrapping with `error-chain`

@@ -4,7 +4,7 @@
 
 Get system information in Rust.
 
-For now it supports Linux, Mac OS X, illumos, Solaris, and Windows.
+For now it supports Linux, Mac OS X, illumos, Solaris, FreeBSD, and Windows.
 And now it can get information of kernel/cpu/memory/disk/load/hostname and so on.
 
 [Documentation](https://docs.rs/sys-info)
@@ -14,7 +14,7 @@ Add this to `Cargo.toml`:
 
 ```
 [dependencies]
-sys-info = "0.6"
+sys-info = "0.7"
 ```
 
 and add this to crate root:
