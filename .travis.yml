@@ -7,11 +7,13 @@ rust:
   - stable
   - beta
   - nightly
-cache: rust
+cache: cargo
 matrix:
   allow_failures:
     - rust: nightly
+before_script: # Use the msvc toolchain of rust
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then rustup toolchain add $TRAVIS_RUST_VERSION-x86_64-pc-windows-msvc && rustup default $TRAVIS_RUST_VERSION-x86_64-pc-windows-msvc ; fi
+  # Not auto installed, so add it here 
+  - rustup component add clippy rustfmt && cargo clippy
 script:
   - cargo test --all --verbose
-  - rustup component add clippy rustfmt &&
-    cargo clippy
