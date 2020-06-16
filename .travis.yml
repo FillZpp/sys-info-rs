@@ -2,16 +2,31 @@ os:
   - linux
   - osx
   - windows
+
 language: rust
 rust:
   - stable
   - beta
   - nightly
-cache: cargo
+
+# Apparently (according to VSCode),
+# `cache: rust` is invalid
+# Should be `cache: cargo`,
+# but this seems to hang the build on windows
+# Uncomment the below line and comment out the current line to enable cargo caching:
+# cache: cargo
+cache: rust
+
 matrix:
   allow_failures:
     - rust: nightly
-before_script: # Use the msvc toolchain of rust
+
+# Use the msvc toolchain of rust on windows
+# The Travis default is _-x86_64-pc-windows-gnu
+# But since we need windows libraries for this crate,
+# _-x86_64-pc-windows-msvc needs to be used instead.
+# See https://github.com/rust-lang/rustup/blob/master/README.md#working-with-rust-on-windows
+before_script:
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then rustup toolchain add $TRAVIS_RUST_VERSION-x86_64-pc-windows-msvc && rustup default $TRAVIS_RUST_VERSION-x86_64-pc-windows-msvc ; fi
 script:
   - cargo test --all --verbose
