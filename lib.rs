@@ -735,7 +735,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(linux)]
+    #[cfg(target_os = "linux")]
     pub fn test_linux_os_release() {
         let os_release = linux_os_release().unwrap();
         println!("linux_os_release(): {:?}", os_release.name)
