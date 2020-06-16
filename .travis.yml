@@ -7,7 +7,7 @@ rust:
   - stable
   - beta
   - nightly
-cache: rust
+cache: cargo
 matrix:
   allow_failures:
     - rust: nightly
