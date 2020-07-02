@@ -13,7 +13,7 @@ use std::io::{self, Read};
 use std::fs::File;
 #[cfg(any(target_os = "windows", target_os = "macos", target_os = "freebsd"))]
 use std::os::raw::c_char;
-#[cfg(not(any(target_os = "windows", target_os = "linux")))]
+#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "haiku")))]
 use std::os::raw::{c_int, c_double};
 
 #[cfg(any(target_os = "macos", target_os = "freebsd"))]
@@ -184,16 +184,21 @@ extern "C" {
     fn get_loadavg() -> LoadAvg;
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd"))]
     fn get_proc_total() -> u64;
+    #[cfg(target_os = "haiku")]
+    fn get_loadavg() -> LoadAvg;
 
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "haiku"))]
     fn get_mem_info() -> MemInfo;
     #[cfg(target_os = "freebsd")]
     fn get_mem_info_freebsd(mi: &mut MemInfo) ->i32;
 
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "haiku"))]
     fn get_disk_info() -> DiskInfo;
     #[cfg(target_os = "freebsd")]
     fn get_disk_info_freebsd(di: &mut DiskInfo) -> i32;
+
+    #[cfg(any(target_os = "haiku"))]
+    fn get_uptime() -> i64; //*const i8;
 }
 
 
@@ -225,7 +230,11 @@ pub fn os_type() -> Result<String, Error> {
     {
         Ok("freebsd".to_string())
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd")))]
+    #[cfg(target_os = "haiku")]
+    {
+        Ok("haiku".to_string())
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os="haiku",)))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -254,7 +263,7 @@ pub fn os_release() -> Result<String, Error> {
 	    }
 	}
     }
-    #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+    #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "haiku"))]
     {
         let release: Option<String> = unsafe {
             let mut name: libc::utsname = std::mem::zeroed();
@@ -270,7 +279,7 @@ pub fn os_release() -> Result<String, Error> {
             Some(release) => Ok(release),
         }
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd")))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -398,8 +407,12 @@ pub fn cpu_speed() -> Result<u64, Error> {
 	    0 => Err(Error::IO(io::Error::last_os_error())),
 	    _ => Ok(res),
 	}
+	}
+    #[cfg(any(target_os = "haiku"))]
+    {
+        Ok(1)
     }
-    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
+    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -440,7 +453,11 @@ pub fn loadavg() -> Result<LoadAvg, Error> {
     {
         Ok(unsafe { get_loadavg() })
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
+    #[cfg(any(target_os = "haiku"))]
+    {
+        Ok(unsafe { get_loadavg() })
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -474,7 +491,12 @@ pub fn proc_total() -> Result<u64, Error> {
 	    _ => Ok(res),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
+    #[cfg(any(target_os = "haiku"))]
+    {
+        // TODO: cleanup
+        Ok(2)
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -544,7 +566,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_free: 0,
         });
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "haiku"))]
     {
         Ok(unsafe { get_mem_info() })
     }
@@ -559,7 +581,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 	    _ => Err(Error::Unknown),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -569,7 +591,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "haiku"))]
     {
         Ok(unsafe { get_disk_info() })
     }
@@ -583,7 +605,7 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
 	    _ => Err(Error::Unknown),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd")))]
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -592,6 +614,18 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
 /// Get hostname.
 #[cfg(target_family = "unix")]
 pub fn hostname() -> Result<String, Error> {
+    #[cfg(target_os = "haiku")]
+    unsafe {
+        let buf_size = libc::sysconf(61) as usize;
+        let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
+        if libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf_size) < 0 {
+            return Err(Error::IO(io::Error::last_os_error()));
+        }
+        let hostname_len = libc::strnlen(buf.as_ptr() as *const libc::c_char, buf_size);
+        buf.set_len(hostname_len);
+        Ok(ffi::CString::new(buf).unwrap().into_string().unwrap())
+    }
+    #[cfg(not(target_os = "haiku"))]
     unsafe {
         let buf_size = libc::sysconf(libc::_SC_HOST_NAME_MAX) as usize;
         let mut buf = Vec::<u8>::with_capacity(buf_size + 1);
@@ -657,6 +691,12 @@ pub fn boottime() -> Result<timeval, Error> {
         }
         bt.tv_sec = (now - start) as i64;
 	Ok(bt)
+    }
+    #[cfg(target_os = "haiku")]
+    {
+        let now = unsafe { get_uptime() };
+        bt.tv_sec = now as i64;
+    Ok(bt)
     }
 }
 
