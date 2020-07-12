@@ -621,7 +621,7 @@ pub fn boottime() -> Result<timeval, Error> {
         tv_usec: 0
     };
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os="android"))]
     {
         let mut s = String::new();
         File::open("/proc/uptime")?.read_to_string(&mut s)?;
