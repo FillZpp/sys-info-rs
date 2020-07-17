@@ -22,6 +22,9 @@ fn main() {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/freebsd.c")
         },
+        "haiku" => {
+            builder.include("/system/develop/headers/private/shared").file("c/haiku.c")
+        },
         _ => panic!("unsupported system: {}", target_os)
     };
     builder.compile("info");
