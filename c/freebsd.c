@@ -77,7 +77,7 @@ uint64_t get_proc_total(void) {
 	return (count);
 }
 
-int32_t get_mem_info_freebsd(struct MemInfo *mi) {
+int32_t get_mem_info_bsd(struct MemInfo *mi) {
 	struct vmtotal vmt;
 	struct xswdev xs;
 	int mib[3], error, i;
@@ -123,7 +123,7 @@ fail:
 	return (-1);
 }
 
-int32_t get_disk_info_freebsd(DiskInfo *di) {
+int32_t get_disk_info_bsd(DiskInfo *di) {
 	struct statfs *sfs, *sf;
 	int i, nmounts;
 	uint64_t dtotal, dfree;
