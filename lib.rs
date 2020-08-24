@@ -336,7 +336,8 @@ fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
         trim_value.remove(0);
     }
     if trim_value.ends_with('"') {
-        trim_value.remove(trim_value.len()-1);
+        let len = trim_value.len();
+        trim_value.remove(len - 1);
     }
 
     return Some((String::from(words[0]), trim_value))
