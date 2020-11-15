@@ -97,8 +97,8 @@ MemInfo get_mem_info(void) {
 		mi.free  = stat.ullAvailPhys / 1024;
 		mi.cached = 0;
 		mi.buffers = 0;
-		mi.swap_total = stat.ullTotalPageFile / 1024;
-		mi.swap_free = stat.ullAvailPageFile / 1024;
+		mi.swap_total = (stat.ullTotalPageFile - stat.ullTotalPhys) / 1024;
+		mi.swap_free = (stat.ullAvailPageFile - stat.ullAvailPhys) / 1024;
 	} else {
 		memset(&mi, 0, sizeof(mi));
 	}
