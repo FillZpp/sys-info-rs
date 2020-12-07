@@ -3,8 +3,11 @@
 #include <string.h>
 #include <windows.h>
 #include <psapi.h>
+#include <intrin.h>
 
 #include "info.h"
+
+#pragma intrinsic(__rdtsc)
 
 #define LEN 20
 #define MAXPROCESSES 1024
