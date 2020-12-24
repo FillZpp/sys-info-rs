@@ -101,7 +101,7 @@ pub struct LinuxOSReleaseInfo {
 
 /// Disk information.
 #[repr(C)]
-#[derive( Deserialize,  Serialize)]
+#[derive(Debug, Deserialize,  Serialize)]
 pub struct DiskInfo {
     pub total: u64,
     pub free: u64,
