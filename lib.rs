@@ -6,6 +6,12 @@
 //!
 
 extern crate libc;
+extern crate serde;
+
+use serde::ser::{Serialize, Serializer, SerializeStruct};
+use serde::de::{Deserialize};
+
+
 
 use std::ffi;
 use std::fmt;
@@ -39,7 +45,7 @@ static OS_KERN_BOOTTIME: libc::c_int = 21;
 
 /// System load average value.
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct LoadAvg {
     /// Average load within one minite.
     pub one: f64,
@@ -51,7 +57,7 @@ pub struct LoadAvg {
 
 /// System memory information.
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct MemInfo {
     /// Total physical memory.
     pub total: u64,
@@ -66,9 +72,11 @@ pub struct MemInfo {
     pub swap_free: u64,
 }
 
+// // implement Serialize for MemInfo
+
 /// The os release info of Linux
 #[derive(Debug)]
-#[derive(Default)]
+#[derive(Default, serde::Deserialize, serde::Serialize)]
 pub struct LinuxOSReleaseInfo {
     pub id: Option<String>,
     pub id_like: Option<String>,
@@ -94,7 +102,7 @@ pub struct LinuxOSReleaseInfo {
 
 /// Disk information.
 #[repr(C)]
-#[derive(Debug)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct DiskInfo {
     pub total: u64,
     pub free: u64,
