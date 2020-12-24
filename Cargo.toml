@@ -26,4 +26,4 @@ cc = "1"
 
 [dependencies]
 libc = "0.2.29"
-serde = "1.0.118"
+serde = {version = "1.0.118", features = ["derive"]}
