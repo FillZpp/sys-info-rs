@@ -760,4 +760,35 @@ mod test {
         let os_release = linux_os_release().unwrap();
         println!("linux_os_release(): {:?}", os_release.name)
     }
+
+    #[test]
+    pub fn test_uname() {
+        let uname = uname().unwrap();
+        println!("uname:
+            sysname: {}
+            nodename: {}
+            release: {}
+            version: {}",
+            uname.sysname().unwrap(),
+            uname.nodename().unwrap(),
+            uname.release().unwrap(),
+            uname.version().unwrap(),
+        );
+        assert!(uname.release().unwrap() == uname.release().unwrap());
+        #[cfg(target_os = "Linux")]
+        assert!(uname.sysname().unwrap() == "Linux");
+        #[cfg(target_family = "unix")]
+        println!("        machine: {}",
+            uname.machine().unwrap(),
+        );
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia",
+            target_os = "redox"
+        ))]
+        println!("        domainname: {}",
+            uname.domainname().unwrap(),
+        );
+    }
 }
