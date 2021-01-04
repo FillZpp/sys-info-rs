@@ -23,5 +23,30 @@ fn main() {
         let t = boottime().unwrap();
         println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
     }
+
+    let uname = sys_info::uname().unwrap();
+    println!("uname:
+        sysname: {}
+        nodename: {}
+        release: {}
+        version: {}",
+        uname.sysname().unwrap(),
+        uname.nodename().unwrap(),
+        uname.release().unwrap(),
+        uname.version().unwrap(),
+    );
+    #[cfg(target_family = "unix")]
+    println!("        machine: {}",
+        uname.machine().unwrap(),
+    );
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "fuchsia",
+        target_os = "redox"
+    ))]
+    println!("        domainname: {}",
+        uname.domainname().unwrap(),
+    );
 }
 

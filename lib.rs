@@ -100,6 +100,16 @@ pub struct DiskInfo {
     pub free: u64,
 }
 
+#[cfg(target_family = "unix")]
+mod uname;
+#[cfg(target_family = "unix")]
+pub use uname::Info as UnameInfo;
+
+#[cfg(not(target_family = "unix"))]
+mod non_unix_uname;
+#[cfg(not(target_family = "unix"))]
+pub use non_unix_uname::Info as UnameInfo;
+
 /// Error types
 #[derive(Debug)]
 pub enum Error {
@@ -196,6 +206,11 @@ extern "C" {
     fn get_disk_info_bsd(di: &mut DiskInfo) -> i32;
 }
 
+/// Returns the result of the unix `uname` syscall or, on non-unix systems, a similar
+/// data-structure.
+pub fn uname() -> Result<UnameInfo, Error> {
+    UnameInfo::new()
+}
 
 /// Get operation system type.
 ///
