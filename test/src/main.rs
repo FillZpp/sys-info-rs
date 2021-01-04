@@ -1,10 +1,8 @@
-
 extern crate sys_info;
 
 use sys_info::*;
 
 fn main() {
-
     println!("os: {} {}", os_type().unwrap(), os_release().unwrap());
     println!("cpu: {} cores, {} MHz", cpu_num().unwrap(), cpu_speed().unwrap());
     println!("proc total: {}", proc_total().unwrap());
@@ -24,4 +22,3 @@ fn main() {
         println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
     }
 }
-

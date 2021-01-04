@@ -9,12 +9,12 @@ extern crate libc;
 
 use std::ffi;
 use std::fmt;
-use std::io::{self, Read};
-use std::fs::File;
+use std::io::{self, BufRead, BufReader};
+use std::fs::{read_to_string, File};
 #[cfg(any(target_os = "windows", target_os = "macos", target_os = "freebsd", target_os = "openbsd"))]
 use std::os::raw::c_char;
 #[cfg(not(any(target_os = "windows", target_os = "linux")))]
-use std::os::raw::{c_int, c_double};
+use std::os::raw::{c_double, c_int};
 
 #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd"))]
 use libc::sysctl;
@@ -67,8 +67,7 @@ pub struct MemInfo {
 }
 
 /// The os release info of Linux
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct LinuxOSReleaseInfo {
     pub id: Option<String>,
     pub id_like: Option<String>,
@@ -188,7 +187,7 @@ extern "C" {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn get_mem_info() -> MemInfo;
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
-    fn get_mem_info_bsd(mi: &mut MemInfo) ->i32;
+    fn get_mem_info_bsd(mi: &mut MemInfo) -> i32;
 
     #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
     fn get_disk_info() -> DiskInfo;
@@ -203,9 +202,8 @@ extern "C" {
 pub fn os_type() -> Result<String, Error> {
     #[cfg(target_os = "linux")]
     {
-        let mut s = String::new();
-        File::open("/proc/sys/kernel/ostype")?.read_to_string(&mut s)?;
-        s.pop(); // pop '\n'
+        let mut s = read_to_string("/proc/sys/kernel/ostype")?;
+        debug_assert!(s.pop() == Some('\n')); // pop '\n'
         Ok(s)
     }
     #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -241,22 +239,21 @@ pub fn os_type() -> Result<String, Error> {
 pub fn os_release() -> Result<String, Error> {
     #[cfg(target_os = "linux")]
     {
-        let mut s = String::new();
-        File::open("/proc/sys/kernel/osrelease")?.read_to_string(&mut s)?;
-        s.pop(); // pop '\n'
+        let mut s = read_to_string("/proc/sys/kernel/osrelease")?;
+        debug_assert!(s.pop() == Some('\n')); // pop '\n'
         Ok(s)
     }
     #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd"))]
     {
         unsafe {
-	    let rp = get_os_release() as *const c_char;
-	    if rp == std::ptr::null() {
-		Err(Error::Unknown)
-	    } else {
-		let typ = ffi::CStr::from_ptr(rp).to_bytes();
-		Ok(String::from_utf8_lossy(typ).into_owned())
-	    }
-	}
+            let rp = get_os_release() as *const c_char;
+            if rp == std::ptr::null() {
+                Err(Error::Unknown)
+            } else {
+                let typ = ffi::CStr::from_ptr(rp).to_bytes();
+                Ok(String::from_utf8_lossy(typ).into_owned())
+            }
+        }
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
     {
@@ -282,65 +279,62 @@ pub fn os_release() -> Result<String, Error> {
 
 /// Get the os release note of Linux
 ///
-/// Information in /etc/os-release, such as name and version of distribution.
+/// Information in /etc/os-release or /usr/lib/os-release, such as name and version of distribution.
 pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
     if !cfg!(target_os = "linux") {
         return Err(Error::UnsupportedSystem);
     }
 
-    let mut s = String::new();
-    File::open("/etc/os-release")?.read_to_string(&mut s)?;
+    // Fallback to /usr/lib/os-release, but always give the first error if both fail.
+    let file = File::open("/etc/os-release")
+        .or_else(|err| File::open("/usr/lib/os-release").map_err(|_| err))?;
+    let lines = BufReader::new(file).lines();
 
     let mut info: LinuxOSReleaseInfo = Default::default();
-    for l in s.split('\n') {
-        match parse_line_for_linux_os_release(l.trim().to_string()) {
-            Some((key, value)) =>
-                match (key.as_ref(), value) {
-                    ("ID", val) => info.id = Some(val),
-                    ("ID_LIKE", val) => info.id_like = Some(val),
-                    ("NAME", val) => info.name = Some(val),
-                    ("PRETTY_NAME", val) => info.pretty_name = Some(val),
+    for line in lines {
+        match parse_line_for_linux_os_release(line?.trim()) {
+            Some((key, value)) => match (key, value) {
+                ("ID", val) => info.id = Some(val),
+                ("ID_LIKE", val) => info.id_like = Some(val),
+                ("NAME", val) => info.name = Some(val),
+                ("PRETTY_NAME", val) => info.pretty_name = Some(val),
 
-                    ("VERSION", val) => info.version = Some(val),
-                    ("VERSION_ID", val) => info.version_id = Some(val),
-                    ("VERSION_CODENAME", val) => info.version_codename = Some(val),
+                ("VERSION", val) => info.version = Some(val),
+                ("VERSION_ID", val) => info.version_id = Some(val),
+                ("VERSION_CODENAME", val) => info.version_codename = Some(val),
 
-                    ("ANSI_COLOR", val) => info.ansi_color = Some(val),
-                    ("CPE_NAME", val) => info.cpe_name = Some(val),
-                    ("BUILD_ID", val) => info.build_id = Some(val),
-                    ("VARIANT", val) => info.variant = Some(val),
-                    ("VARIANT_ID", val) => info.variant_id = Some(val),
+                ("ANSI_COLOR", val) => info.ansi_color = Some(val),
+                ("CPE_NAME", val) => info.cpe_name = Some(val),
+                ("BUILD_ID", val) => info.build_id = Some(val),
+                ("VARIANT", val) => info.variant = Some(val),
+                ("VARIANT_ID", val) => info.variant_id = Some(val),
 
-                    ("HOME_URL", val) => info.home_url = Some(val),
-                    ("BUG_REPORT_URL", val) => info.bug_report_url = Some(val),
-                    ("SUPPORT_URL", val) => info.support_url = Some(val),
-                    ("DOCUMENTATION_URL", val) => info.documentation_url = Some(val),
-                    ("LOGO", val) => info.logo = Some(val),
-                    _ => {}
-                }
-            None => {}
+                ("HOME_URL", val) => info.home_url = Some(val),
+                ("BUG_REPORT_URL", val) => info.bug_report_url = Some(val),
+                ("SUPPORT_URL", val) => info.support_url = Some(val),
+                ("DOCUMENTATION_URL", val) => info.documentation_url = Some(val),
+                ("LOGO", val) => info.logo = Some(val),
+                _ => {}
+            },
+            None => (),
         }
     }
 
     Ok(info)
 }
 
-fn parse_line_for_linux_os_release(l: String) -> Option<(String, String)> {
-    let words: Vec<&str> = l.splitn(2, '=').collect();
-    if words.len() < 2 {
-        return None
-    }
-    let mut trim_value = String::from(words[1]);
+fn parse_line_for_linux_os_release(line: &str) -> Option<(&str, String)> {
+    let eq_idx = line.find('=')?;
+    let name = &line[..eq_idx];
+    let mut value = &line[eq_idx+1..];
 
-    if trim_value.starts_with('"') {
-        trim_value.remove(0);
-    }
-    if trim_value.ends_with('"') {
-        let len = trim_value.len();
-        trim_value.remove(len - 1);
+    // TODO - Escape sequences?
+    if value.len() > 1 && value.starts_with('"') && value.ends_with('"') {
+        let len = value.len();
+        value = &value[1..len-1];
     }
 
-    return Some((String::from(words[0]), trim_value))
+    Some((name, value.to_string()))
 }
 
 /// Get cpu num quantity.
@@ -372,23 +366,27 @@ pub fn cpu_num() -> Result<u32, Error> {
 pub fn cpu_speed() -> Result<u64, Error> {
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
     {
-       Ok(kstat::cpu_mhz()?)
+        Ok(kstat::cpu_mhz()?)
     }
     #[cfg(target_os = "linux")]
     {
-        // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq
-        let mut s = String::new();
-        File::open("/proc/cpuinfo")?.read_to_string(&mut s)?;
+        // /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq???
 
-        let find_cpu_mhz = s.split('\n').find(|line|
-            line.starts_with("cpu MHz\t") ||
-                line.starts_with("BogoMIPS") ||
-                line.starts_with("clock\t") ||
-                line.starts_with("bogomips per cpu")
-        );
+        let mut lines = BufReader::new(File::open("/proc/cpuinfo")?).lines();
 
-        find_cpu_mhz.and_then(|line| line.split(':').last())
-            .and_then(|val| val.replace("MHz", "").trim().parse::<f64>().ok())
+        // Find a suitable line or the first error.
+        let cpu_mhz_line = lines.find_map(|line| match line {
+            Ok(line)
+                if line.starts_with("cpu MHz\t")
+                    || line.starts_with("BogoMIPS")
+                    || line.starts_with("clock\t")
+                    || line.starts_with("bogomips per cpu") => Some(Ok(line)),
+            Ok(_) => None,
+            Err(err) => Some(Err(err.into())),
+        }).unwrap_or(Err(Error::Unknown))?;
+
+        cpu_mhz_line.split(':').last()
+            .and_then(|val| val.replace("MHz", "").trim().parse::<f32>().ok())
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
@@ -398,11 +396,11 @@ pub fn cpu_speed() -> Result<u64, Error> {
     }
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     {
-	let res: u64 = unsafe { get_cpu_speed() };
-	match res {
-	    0 => Err(Error::IO(io::Error::last_os_error())),
-	    _ => Ok(res),
-	}
+        let res: u64 = unsafe { get_cpu_speed() };
+        match res {
+            0 => Err(Error::IO(io::Error::last_os_error())),
+            _ => Ok(res),
+        }
     }
     #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd")))]
     {
@@ -416,16 +414,12 @@ pub fn cpu_speed() -> Result<u64, Error> {
 pub fn loadavg() -> Result<LoadAvg, Error> {
     #[cfg(target_os = "linux")]
     {
-        let mut s = String::new();
-        File::open("/proc/loadavg")?.read_to_string(&mut s)?;
-        let loads = s.trim().split(' ')
-            .take(3)
-            .map(|val| val.parse::<f64>().unwrap())
-            .collect::<Vec<f64>>();
+        let s = read_to_string("/proc/loadavg")?;
+        let mut loads = s.trim().split(' ').map(|val| val.parse().unwrap());
         Ok(LoadAvg {
-            one: loads[0],
-            five: loads[1],
-            fifteen: loads[2],
+            one: loads.next().unwrap(),
+            five: loads.next().unwrap(),
+            fifteen: loads.next().unwrap(),
         })
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "freebsd", target_os = "openbsd"))]
@@ -459,12 +453,10 @@ pub fn proc_total() -> Result<u64, Error> {
     }
     #[cfg(target_os = "linux")]
     {
-        let mut s = String::new();
-        File::open("/proc/loadavg")?.read_to_string(&mut s)?;
-        s.split(' ')
-            .nth(3)
-            .and_then(|val| val.split('/').last())
-            .and_then(|val| val.parse::<u64>().ok())
+        read_to_string("/proc/loadavg")?
+            .split(' ').nth(3)
+            .and_then(|val| val.rsplit('/').next())
+            .and_then(|val| val.parse().ok())
             .ok_or(Error::Unknown)
     }
     #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -473,11 +465,11 @@ pub fn proc_total() -> Result<u64, Error> {
     }
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     {
-	let res: u64 = unsafe { get_proc_total() };
-	match res {
-	    0 => Err(Error::IO(io::Error::last_os_error())),
-	    _ => Ok(res),
-	}
+        let res: u64 = unsafe { get_proc_total() };
+        match res {
+            0 => Err(Error::IO(io::Error::last_os_error())),
+            _ => Ok(res),
+        }
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd")))]
     {
@@ -501,8 +493,7 @@ fn pagesize() -> Result<u32, Error> {
 pub fn mem_info() -> Result<MemInfo, Error> {
     #[cfg(target_os = "linux")]
     {
-        let mut s = String::new();
-        File::open("/proc/meminfo")?.read_to_string(&mut s)?;
+        let s = read_to_string("/proc/meminfo")?;
         let mut meminfo_hashmap = HashMap::new();
         for line in s.lines() {
             let mut split_line = line.split_whitespace();
@@ -555,14 +546,15 @@ pub fn mem_info() -> Result<MemInfo, Error> {
     }
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     {
-	let mut mi:MemInfo = MemInfo{total: 0, free: 0, avail: 0, buffers: 0,
-				     cached: 0, swap_total: 0, swap_free: 0};
-	let res: i32 = unsafe { get_mem_info_bsd(&mut mi) };
-	match res {
-	    -1 => Err(Error::IO(io::Error::last_os_error())),
-	    0 => Ok(mi),
-	    _ => Err(Error::Unknown),
-	}
+        let mut mi:MemInfo = MemInfo {
+            total: 0, free: 0, avail: 0, buffers: 0, cached: 0, swap_total: 0, swap_free: 0,
+        };
+        let res: i32 = unsafe { get_mem_info_bsd(&mut mi) };
+        match res {
+            -1 => Err(Error::IO(io::Error::last_os_error())),
+            0 => Ok(mi),
+            _ => Err(Error::Unknown),
+        }
     }
     #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd")))]
     {
@@ -580,13 +572,13 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
     }
     #[cfg(any(target_os = "freebsd", target_os = "openbsd"))]
     {
-	let mut di:DiskInfo = DiskInfo{total: 0, free: 0};
-	let res: i32 = unsafe { get_disk_info_bsd(&mut di) };
-	match res {
-	    -1 => Err(Error::IO(io::Error::last_os_error())),
-	    0 => Ok(di),
-	    _ => Err(Error::Unknown),
-	}
+        let mut di:DiskInfo = DiskInfo { total: 0, free: 0 };
+        let res: i32 = unsafe { get_disk_info_bsd(&mut di) };
+        match res {
+            -1 => Err(Error::IO(io::Error::last_os_error())),
+            0 => Ok(di),
+            _ => Err(Error::Unknown),
+        }
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd")))]
     {
@@ -621,35 +613,41 @@ pub fn hostname() -> Result<String, Error> {
 /// Get system boottime
 #[cfg(not(windows))]
 pub fn boottime() -> Result<timeval, Error> {
-    let mut bt = timeval {
-        tv_sec: 0,
-        tv_usec: 0
-    };
-
     #[cfg(any(target_os = "linux", target_os="android"))]
     {
-        let mut s = String::new();
-        File::open("/proc/uptime")?.read_to_string(&mut s)?;
-        let secs = s.trim().split(' ')
-            .take(2)
-            .map(|val| val.parse::<f64>().unwrap())
-            .collect::<Vec<f64>>();
-        bt.tv_sec = secs[0] as libc::time_t;
-        bt.tv_usec = secs[1] as libc::suseconds_t;
-	Ok(bt)
+        let mut secs = BufReader::with_capacity(32, File::open("/proc/uptime")?)
+            .split(' ' as u8)
+            .map(|val| {
+                std::str::from_utf8(&val?).ok()
+                    .and_then(|val| val.trim().parse::<f64>().ok())
+                    .ok_or(Error::Unknown)
+            });
+        Ok(timeval {
+            tv_sec: secs.next().unwrap()? as libc::time_t,
+            tv_usec: secs.next().unwrap()? as libc::suseconds_t,
+        })
     }
     #[cfg(any(target_os = "macos", target_os="freebsd", target_os = "openbsd"))]
     {
+        let mut bt = timeval {
+            tv_sec: 0,
+            tv_usec: 0,
+        };
         let mut mib = [OS_CTL_KERN, OS_KERN_BOOTTIME];
         let mut size: libc::size_t = size_of_val(&bt) as libc::size_t;
         unsafe {
-            if sysctl(&mut mib[0], 2,
-                   &mut bt as *mut timeval as *mut libc::c_void,
-                   &mut size, null_mut(), 0) == -1 {
-		Err(Error::IO(io::Error::last_os_error()))
-	    } else {
-		Ok(bt)
-	    }
+            if sysctl(
+                &mut mib[0],
+                2,
+                &mut bt as *mut timeval as *mut libc::c_void,
+                &mut size,
+                null_mut(),
+                0,
+            ) == -1 {
+                Err(Error::IO(io::Error::last_os_error()))
+            } else {
+                Ok(bt)
+            }
         }
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
@@ -660,8 +658,10 @@ pub fn boottime() -> Result<timeval, Error> {
         if now < start {
             return Err(Error::General("time went backwards".into()));
         }
-        bt.tv_sec = (now - start) as i64;
-	Ok(bt)
+        Ok(timeval {
+            tv_sec: (now - start) as i64,
+            tv_usec: 0,
+        })
     }
 }
 
