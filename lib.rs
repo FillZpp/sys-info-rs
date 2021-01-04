@@ -292,8 +292,8 @@ pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
 
     let mut info: LinuxOSReleaseInfo = Default::default();
     for line in lines {
-        match parse_line_for_linux_os_release(line?.trim()) {
-            Some((key, value)) => match (key, value) {
+        if let Some((key, value)) = parse_line_for_linux_os_release(line?.trim()) {
+            match (key, value) {
                 ("ID", val) => info.id = Some(val),
                 ("ID_LIKE", val) => info.id_like = Some(val),
                 ("NAME", val) => info.name = Some(val),
@@ -315,8 +315,7 @@ pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
                 ("DOCUMENTATION_URL", val) => info.documentation_url = Some(val),
                 ("LOGO", val) => info.logo = Some(val),
                 _ => {}
-            },
-            None => (),
+            }
         }
     }
 
@@ -500,7 +499,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             let label = split_line.next();
             let value = split_line.next();
             if value.is_some() && label.is_some() {
-                let label = label.unwrap().split(':').nth(0).ok_or(Error::Unknown)?;
+                let label = label.unwrap().split(':').next().ok_or(Error::Unknown)?;
                 let value = value.unwrap().parse::<u64>().ok().ok_or(Error::Unknown)?;
                 meminfo_hashmap.insert(label, value);
             }
@@ -509,7 +508,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
         let free = *meminfo_hashmap.get("MemFree").ok_or(Error::Unknown)?;
         let buffers = *meminfo_hashmap.get("Buffers").ok_or(Error::Unknown)?;
         let cached = *meminfo_hashmap.get("Cached").ok_or(Error::Unknown)?;
-        let avail = meminfo_hashmap.get("MemAvailable").map(|v| v.clone()).or_else(|| {
+        let avail = meminfo_hashmap.get("MemAvailable").copied().or_else(|| {
             let sreclaimable = *meminfo_hashmap.get("SReclaimable")?;
             let shmem = *meminfo_hashmap.get("Shmem")?;
             Some(free + buffers + cached + sreclaimable - shmem)
@@ -616,7 +615,7 @@ pub fn boottime() -> Result<timeval, Error> {
     #[cfg(any(target_os = "linux", target_os="android"))]
     {
         let mut secs = BufReader::with_capacity(32, File::open("/proc/uptime")?)
-            .split(' ' as u8)
+            .split(b' ')
             .map(|val| {
                 std::str::from_utf8(&val?).ok()
                     .and_then(|val| val.trim().parse::<f64>().ok())
