@@ -275,19 +275,7 @@ pub fn os_release() -> Result<String, Error> {
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
     {
-        let release: Option<String> = unsafe {
-            let mut name: libc::utsname = std::mem::zeroed();
-            if libc::uname(&mut name) < 0 {
-                None
-            } else {
-                let cstr = std::ffi::CStr::from_ptr(name.release.as_mut_ptr());
-                Some(cstr.to_string_lossy().to_string())
-            }
-        };
-        match release {
-            None => Err(Error::Unknown),
-            Some(release) => Ok(release),
-        }
+        Ok(uname()?.release()?.to_string())
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd")))]
     {
