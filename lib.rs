@@ -66,30 +66,211 @@ pub struct MemInfo {
     pub swap_free: u64,
 }
 
-/// The os release info of Linux
+/// The os release info of Linux.
+///
+/// See [man os-release](https://www.freedesktop.org/software/systemd/man/os-release.html).
 #[derive(Debug)]
 #[derive(Default)]
 pub struct LinuxOSReleaseInfo {
+    /// A lower-case string (no spaces or other characters outside of 0–9, a–z, ".", "_" and "-")
+    /// identifying the operating system, excluding any version information and suitable for
+    /// processing by scripts or usage in generated filenames.
+    ///
+    /// Note that we don't verify that the string is lower-case and can be used in file-names. If
+    /// the /etc/os-release file has an invalid value, you will get this value.
+    ///
+    /// If not set, defaults to "ID=linux". Use `self.id()` to fallback to the default.
+    ///
+    /// Example: "fedora" or "debian".
     pub id: Option<String>,
+
+    /// A space-separated list of operating system identifiers in the same syntax as the ID=
+    /// setting. It should list identifiers of operating systems that are closely related to the
+    /// local operating system in regards to packaging and programming interfaces, for example
+    /// listing one or more OS identifiers the local OS is a derivative from. An OS should
+    /// generally only list other OS identifiers it itself is a derivative of, and not any OSes
+    /// that are derived from it, though symmetric relationships are possible. Build scripts and
+    /// similar should check this variable if they need to identify the local operating system and
+    /// the value of ID= is not recognized. Operating systems should be listed in order of how
+    /// closely the local operating system relates to the listed ones, starting with the closest.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: for an operating system with `ID=centos`, an assignment of `ID_LIKE="rhel fedora"`
+    /// would be appropriate. For an operating system with `ID=ubuntu`, an assignment of
+    /// `ID_LIKE=debian` is appropriate.
     pub id_like: Option<String>,
+
+    /// A string identifying the operating system, without a version component, and suitable for
+    /// presentation to the user.
+    ///
+    /// If not set, defaults to "NAME=Linux".Use `self.id()` to fallback to the default.
+    ///
+    /// Example: "Fedora" or "Debian GNU/Linux".
     pub name: Option<String>,
+
+    /// A pretty operating system name in a format suitable for presentation to the user. May or
+    /// may not contain a release code name or OS version of some kind, as suitable.
+    ///
+    /// If not set, defaults to "Linux". Use `self.id()` to fallback to the default.
+    ///
+    /// Example: "Fedora 17 (Beefy Miracle)".
     pub pretty_name: Option<String>,
 
+    /// A string identifying the operating system version, excluding any OS name information,
+    /// possibly including a release code name, and suitable for presentation to the user.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: "17" or "17 (Beefy Miracle)"
     pub version: Option<String>,
+
+    /// A lower-case string (mostly numeric, no spaces or other characters outside of 0–9, a–z,
+    /// ".", "_" and "-") identifying the operating system version, excluding any OS name
+    /// information or release code name, and suitable for processing by scripts or usage in
+    /// generated filenames.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: "17" or "11.04".
     pub version_id: Option<String>,
+
+    /// A lower-case string (no spaces or other characters outside of 0–9, a–z, ".", "_" and "-")
+    /// identifying the operating system release code name, excluding any OS name information or
+    /// release version, and suitable for processing by scripts or usage in generated filenames.
+    ///
+    /// This field is optional and may not be implemented on all systems.
+    ///
+    /// Examples: "buster", "xenial".
     pub version_codename: Option<String>,
 
+    /// A suggested presentation color when showing the OS name on the console. This should be
+    /// specified as string suitable for inclusion in the ESC [ m ANSI/ECMA-48 escape code for
+    /// setting graphical rendition.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: "0;31" for red, "1;34" for light blue, or "0;38;2;60;110;180" for Fedora blue.
     pub ansi_color: Option<String>,
+
+    /// A string, specifying the name of an icon as defined by freedesktop.org Icon Theme
+    /// Specification. This can be used by graphical applications to display an operating
+    /// system's or distributor's logo.
+    ///
+    /// This field is optional and may not necessarily be implemented on all systems.
+    ///
+    /// Examples: "LOGO=fedora-logo", "LOGO=distributor-logo-opensuse".
+    pub logo: Option<String>,
+
+    /// A CPE name for the operating system, in URI binding syntax, following the Common Platform
+    /// Enumeration Specification as proposed by the NIST.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: "cpe:/o:fedoraproject:fedora:17".
     pub cpe_name: Option<String>,
+
+    /// A string uniquely identifying the system image used as the origin for a distribution (it is
+    /// not updated with system updates). The field can be identical between different VERSION_IDs
+    /// as BUILD_ID is an only a unique identifier to a specific version. Distributions that
+    /// release each update as a new version would only need to use VERSION_ID as each build is
+    /// already distinct based on the VERSION_ID.
+    ///
+    /// This field is optional.
+    ///
+    /// Example: "2013-03-20.3" or "BUILD_ID=201303203".
     pub build_id: Option<String>,
+
+    /// A string identifying a specific variant or edition of the operating system suitable for
+    /// presentation to the user. This field may be used to inform the user that the configuration
+    /// of this system is subject to a specific divergent set of rules or default configuration
+    /// settings.
+    ///
+    /// This field is optional and may not be implemented on all systems.
+    ///
+    /// Examples: "Server Edition", "Smart Refrigerator Edition".
+    ///
+    /// Note: this field is for display purposes only. The VARIANT_ID field should be used for
+    /// making programmatic decisions.
     pub variant: Option<String>,
+
+    /// A lower-case string (no spaces or other characters outside of 0–9, a–z, ".", "_" and "-"),
+    /// identifying a specific variant or edition of the operating system. This may be interpreted
+    /// by other packages in order to determine a divergent default configuration.
+    ///
+    /// This field is optional and may not be implemented on all systems.
+    ///
+    /// Examples: "server", "embedded".
     pub variant_id: Option<String>,
 
+    /// HOME_URL= should refer to the of the operating system, or alternatively some homepage of
+    /// the specific version of the operating system.
+    ///
+    /// These URLs are intended to be exposed in "About this system" UIs behind links with captions
+    /// such as "About this Operating System", "Obtain Support", "Report a Bug", or "Privacy
+    /// Policy". The values should be in RFC3986 format, and should be "http:" or "https:" URLs,
+    /// and possibly "mailto:" or "tel:". Only one URL shall be listed in each setting. If multiple
+    /// resources need to be referenced, it is recommended to provide an online landing page
+    /// linking all available resources.
+    ///
+    /// Example: "https://fedoraproject.org/".
     pub home_url: Option<String>,
-    pub bug_report_url: Option<String>,
-    pub support_url: Option<String>,
+
+    /// DOCUMENTATION_URL= should refer to the main documentation page for this operating system.
+    ///
+    /// See also `home_url`.
     pub documentation_url: Option<String>,
-    pub logo: Option<String>,
+
+    /// SUPPORT_URL= should refer to the main support page for the operating system, if there is
+    /// any. This is primarily intended for operating systems which vendors provide support for.
+    ///
+    /// See also `home_url`.
+    pub support_url: Option<String>,
+
+    /// BUG_REPORT_URL= should refer to the main bug reporting page for the operating system, if
+    /// there is any. This is primarily intended for operating systems that rely on community QA.
+    ///
+    /// Example: "https://bugzilla.redhat.com/".
+    ///
+    /// See also `home_url`.
+    pub bug_report_url: Option<String>,
+
+    /// PRIVACY_POLICY_URL= should refer to the main privacy policy page for the operating system,
+    /// if there is any. These settings are optional, and providing only some of these settings is
+    /// common.
+    ///
+    /// See also `home_url`.
+    pub privacy_policy_url: Option<String>,
+}
+
+macro_rules! os_release_defaults {
+    (
+        $(
+            $(#[$meta:meta])*
+            $vis:vis fn $field:ident => $default:literal
+        )*
+    ) => {
+        $(
+            $(#[$meta])*
+            $vis fn $field(&self) -> &str {
+                match self.$field.as_ref() {
+                    Some(value) => value,
+                    None => $default,
+                }
+            }
+        )*
+    }
+}
+
+impl LinuxOSReleaseInfo {
+    os_release_defaults!(
+        /// Returns the value of `self.id` or, if `None`, "linux" (the default value).
+        pub fn id => "linux"
+        /// Returns the value of `self.name` or, if `None`, "Linux" (the default value).
+        pub fn name => "Linux"
+        /// Returns the value of `self.pretty_name` or, if `None`, "Linux" (the default value).
+        pub fn pretty_name => "Linux"
+    );
 }
 
 /// Disk information.
@@ -286,6 +467,8 @@ pub fn os_release() -> Result<String, Error> {
 /// Get the os release note of Linux
 ///
 /// Information in /etc/os-release, such as name and version of distribution.
+///
+/// See `LinuxOSReleaseInfo` for more documentation.
 pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
     if !cfg!(target_os = "linux") {
         return Err(Error::UnsupportedSystem);
@@ -309,6 +492,8 @@ pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
                     ("VERSION_CODENAME", val) => info.version_codename = Some(val),
 
                     ("ANSI_COLOR", val) => info.ansi_color = Some(val),
+                    ("LOGO", val) => info.logo = Some(val),
+
                     ("CPE_NAME", val) => info.cpe_name = Some(val),
                     ("BUILD_ID", val) => info.build_id = Some(val),
                     ("VARIANT", val) => info.variant = Some(val),
@@ -318,7 +503,7 @@ pub fn linux_os_release() -> Result<LinuxOSReleaseInfo, Error> {
                     ("BUG_REPORT_URL", val) => info.bug_report_url = Some(val),
                     ("SUPPORT_URL", val) => info.support_url = Some(val),
                     ("DOCUMENTATION_URL", val) => info.documentation_url = Some(val),
-                    ("LOGO", val) => info.logo = Some(val),
+                    ("PRIVACY_POLICY_URL", val) => info.privacy_policy_url = Some(val),
                     _ => {}
                 }
             None => {}

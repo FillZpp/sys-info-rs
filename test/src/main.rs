@@ -48,5 +48,8 @@ fn main() {
     println!("        domainname: {}",
         uname.domainname().unwrap(),
     );
+
+    #[cfg(target_os = "linux")]
+    println!("/etc/os-release: {:?}", linux_os_release().unwrap());
 }
 

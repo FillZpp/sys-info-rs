@@ -3,6 +3,8 @@
 #include <string.h>
 #include <windows.h>
 #include <psapi.h>
+#include <winnt.h>
+#include <powerbase.h>
 
 #include "info.h"
 
@@ -46,18 +48,28 @@ unsigned int get_cpu_num(void) {
 	return num;
 }
 
+// https://docs.microsoft.com/en-us/windows/win32/power/processor-power-information-str#requirements
+// Note that this structure definition was accidentally omitted from WinNT.h. This error will be corrected in the future.
+// In the meantime, to compile your application, include the structure definition contained in this topic in your source code.
+typedef struct _PROCESSOR_POWER_INFORMATION
+{
+	ULONG Number;
+	ULONG MaxMhz;
+	ULONG CurrentMhz;
+	ULONG MhzLimit;
+	ULONG MaxIdleState;
+	ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION, *PPROCESSOR_POWER_INFORMATION;
+
 unsigned long get_cpu_speed(void) {
-	LARGE_INTEGER qw_wait, qw_start, qw_current;
-	QueryPerformanceCounter(&qw_start);
-	QueryPerformanceFrequency(&qw_wait);
-	qw_wait.QuadPart >>= 5;
-	unsigned __int64 start = __rdtsc();
-	
-	do {
-		QueryPerformanceCounter(&qw_current);
-	} while (qw_current.QuadPart - qw_start.QuadPart < qw_wait.QuadPart);
-	
-	return ((__rdtsc() - start) << 5) / 1000000;
+	unsigned int num = get_cpu_num();
+	PROCESSOR_POWER_INFORMATION *power_info = malloc(num * sizeof(PROCESSOR_POWER_INFORMATION));
+
+	CallNtPowerInformation(ProcessorInformation, NULL, 0, power_info, num * sizeof(PROCESSOR_POWER_INFORMATION));
+	unsigned int speed = power_info[0].MaxMhz;
+
+	free(power_info);
+	return speed;
 }
 
 LoadAvg get_loadavg(void) {
