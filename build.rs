@@ -16,6 +16,7 @@ fn main() {
         "darwin" | "ios" => builder.file("c/macos.c"),
         "windows" => {
             println!("cargo:rustc-flags=-l psapi");
+            println!("cargo:rustc-flags=-l Powrprof");
             builder.file("c/windows.c")
         },
 	"freebsd" => {
