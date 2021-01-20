@@ -16,12 +16,11 @@ struct nlist {
 	char *name;
 };
 
-static struct nlist *DFhashvector[DFHASHSIZE];
 unsigned int DFhash(const char*);
-struct nlist *seen_before(const char*);
-void DFcleanup(void);
+struct nlist *seen_before(struct nlist**, const char*);
+void DFcleanup(struct nlist**);
 int remote_mount(const char*, const char*);
-float device_space(char*, char*, double*, double*);
+float device_space(struct nlist**, char*, char*, double*, double*);
 
 
 /* Get information */
@@ -79,6 +78,7 @@ MemInfo get_mem_info(void) {
 DiskInfo get_disk_info(void) {
 	FILE *mounts;
 	char procline[1024];
+	struct nlist *DFhashvector[DFHASHSIZE] = {0};
 	char *mount, *device, *type, *mode, *other;
 	float thispct, max=0.0;
 	double dtotal=0.0, dfree=0.0;
@@ -108,13 +108,13 @@ DiskInfo get_disk_info(void) {
 		if (remote_mount(device, type)) continue;
 		if (strncmp(device, "/dev/", 5) != 0 &&
 		    strncmp(device, "/dev2/", 6) != 0) continue;
-		thispct = device_space(mount, device, &dtotal, &dfree);
+		thispct = device_space(DFhashvector, mount, device, &dtotal, &dfree);
 		if (!max || max<thispct)
 			max = thispct;
 	}
 	fclose(mounts);
 
-	DFcleanup();
+	DFcleanup(DFhashvector);
 	di.total = dtotal / 1000;
 	di.free = dfree / 1000;
 	
@@ -131,7 +131,7 @@ unsigned int DFhash(const char *s)
 }
 
 /* From K&R C book, pp. 144-145 */
-struct nlist * seen_before(const char *name)
+struct nlist * seen_before(struct nlist **DFhashvector, const char *name)
 {
 	struct nlist *found=0, *np;
 	unsigned int hashval;
@@ -156,7 +156,7 @@ struct nlist * seen_before(const char *name)
 		return found;
 }
 
-void DFcleanup()
+void DFcleanup(struct nlist **DFhashvector)
 {
 	struct nlist *np, *next;
 	int i;
@@ -182,7 +182,7 @@ int remote_mount(const char *device, const char *type)
 		|| (!strcmp(type,"gfs")) || (!strcmp(type,"none")) );
 }
 
-float device_space(char *mount, char *device, double *total_size, double *total_free)
+float device_space(struct nlist **DFhashvector, char *mount, char *device, double *total_size, double *total_free)
 {
 	struct statvfs svfs;
 	double blocksize;
@@ -192,7 +192,7 @@ float device_space(char *mount, char *device, double *total_size, double *total_
 	float pct=0.0;
 
 	/* Avoid multiply-mounted disks - not done in df. */
-	if (seen_before(device)) return pct;
+	if (seen_before(DFhashvector, device)) return pct;
 
 	if (statvfs(mount, &svfs)) {
 		/* Ignore funky devices... */
