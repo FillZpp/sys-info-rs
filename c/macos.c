@@ -98,6 +98,7 @@ MemInfo get_mem_info(void) {
 	size_t len;
 	int mib[2];
 	vm_statistics_data_t vm_stat;
+	struct xsw_usage swap_info;
 	mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
 	MemInfo mi;
 
@@ -108,17 +109,22 @@ MemInfo get_mem_info(void) {
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		size /= 1024;
 	}
+
+	mib[0] = CTL_VM;
+  	mib[1] = VM_SWAPUSAGE;
+	len = sizeof(swap_info);
+	sysctl(mib, 2 , &swap_info, &len, NULL, 0);
 	
 	host_statistics(mach_host_self(), HOST_VM_INFO,
 				(host_info_t)&vm_stat, &count);
 
 	mi.total       = size;
-	mi.avail       = vm_stat.active_count * PAGE_SIZE / 1024;
-	mi.free        = vm_stat.free_count * PAGE_SIZE / 1024;
+	mi.avail       = (vm_stat.free_count + vm_stat.inactive_count) * PAGE_SIZE / 1024;
+	mi.free        = (vm_stat.free_count - vm_stat.speculative_count) * PAGE_SIZE / 1024;
 	mi.buffers     = 0;
 	mi.cached      = 0;
-	mi.swap_total  = 0;
-	mi.swap_free   = 0;
+	mi.swap_total  = swap_info.xsu_total / 1024;
+	mi.swap_free   = swap_info.xsu_avail / 1024;
 
 	return mi;
 }
