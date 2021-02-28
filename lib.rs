@@ -358,7 +358,7 @@ extern "C" {
 
     #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd")), any(unix, windows)))]
     fn get_cpu_num() -> u32;
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd"))]
+    #[cfg(any(target_os = "macos", all(target_os = "windows", not(target_arch = "gnu")), target_os = "freebsd", target_os = "openbsd"))]
     fn get_cpu_speed() -> u64;
 
     #[cfg(target_os = "windows")]
