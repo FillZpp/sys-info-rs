@@ -21,37 +21,49 @@ static int skipvfs;
 
 /* Get information */
 const char *get_os_type(void) {
-	char *s, buf[LEN];
+	char *buf;
 	size_t len;
 	int mib[2];
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_OSTYPE;
-	s = malloc(LEN);
-	len = sizeof(buf);
-	
-	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1)
-		strncpy(s, "Darwin", len);
-	strncpy(s, buf, len);
+	buf = malloc(LEN);
+	len = LEN;
 
-	return s;
+	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1) {
+		// At this point `len` is _most likely_ set to `0` (e.g. in case of ENOMEM).
+		// We copy our string and reset the length.
+		strncpy(buf, "Darwin", LEN);
+		len = LEN;
+	}
+
+	// Ensure null termination at the end.
+	buf[len-1] = '\0';
+
+	return buf;
 }
 
 const char *get_os_release(void) {
-	char *s, buf[LEN];
+	char *buf;
 	size_t len;
 	int mib[2];
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_OSRELEASE;
-	s = malloc(LEN);
-	len = sizeof(buf);
+	buf = malloc(LEN);
+	len = LEN;
 
-	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1)
-		strncpy(s, "Unknown", len);
-	strncpy(s, buf, len);
+	if (sysctl(mib, 2, buf, &len, NULL, 0) == -1) {
+		// At this point `len` is _most likely_ set to `0` (e.g. in case of ENOMEM).
+		// We copy our string and reset the length.
+		strncpy(buf, "Unknown", LEN);
+		len = LEN;
+	}
 
-	return s;
+	// Ensure null termination at the end.
+	buf[len-1] = '\0';
+
+	return buf;
 }
 
 unsigned int get_cpu_num(void) {
@@ -72,7 +84,7 @@ unsigned int get_cpu_num(void) {
 unsigned long get_cpu_speed(void) {
 	unsigned long speed;
 	size_t len;
-	
+
 	len = sizeof(speed);
 	sysctlbyname("hw.cpufrequency", &speed, &len, NULL, 0);
 	speed /= 1000000;
@@ -89,7 +101,7 @@ unsigned long get_proc_total(void) {
 	mib[2] = KERN_PROC_ALL;
 
 	sysctl(mib, 3, NULL, &len, NULL, 0);
-	
+
 	return len / sizeof(struct kinfo_proc);
 }
 
@@ -114,7 +126,7 @@ MemInfo get_mem_info(void) {
   	mib[1] = VM_SWAPUSAGE;
 	len = sizeof(swap_info);
 	sysctl(mib, 2 , &swap_info, &len, NULL, 0);
-	
+
 	host_statistics(mach_host_self(), HOST_VM_INFO,
 				(host_info_t)&vm_stat, &count);
 
@@ -281,4 +293,4 @@ char *makenetvfslist(void){
 }
 
 
-	
+
