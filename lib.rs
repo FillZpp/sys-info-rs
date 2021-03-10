@@ -203,7 +203,7 @@ pub struct LinuxOSReleaseInfo {
     /// Examples: "server", "embedded".
     pub variant_id: Option<String>,
 
-    /// HOME_URL= should refer to the of the operating system, or alternatively some homepage of
+    /// HOME_URL= should refer to the homepage of the operating system, or alternatively some homepage of
     /// the specific version of the operating system.
     ///
     /// These URLs are intended to be exposed in "About this system" UIs behind links with captions
