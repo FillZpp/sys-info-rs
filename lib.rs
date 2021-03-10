@@ -41,11 +41,11 @@ static OS_KERN_BOOTTIME: libc::c_int = 21;
 #[repr(C)]
 #[derive(Debug)]
 pub struct LoadAvg {
-    /// Average load within one minite.
+    /// Average load within one minutes.
     pub one: f64,
-    /// Average load within five minites.
+    /// Average load within five minutes.
     pub five: f64,
-    /// Average load within fifteen minites.
+    /// Average load within fifteen minutes.
     pub fifteen: f64,
 }
 
