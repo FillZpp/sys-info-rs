@@ -27,6 +27,10 @@ fn main() {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/openbsd.c")
         },
+        "netbsd" => {
+            println!("cargo:rustc-flags=-l pthread");
+            builder.file("c/netbsd.c")
+        },
         _ => panic!("unsupported system: {}", target_os)
     };
     builder.compile("info");
