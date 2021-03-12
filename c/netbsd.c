@@ -102,32 +102,32 @@ fail:
 }
 
 int32_t get_disk_info_bsd(DiskInfo *di) {
-	struct statvfs *sfs, *sf;
+	struct statvfs *svfs, *svf;
 	int i, nmounts;
 	uint64_t dtotal, dfree;
 	int32_t res = 0;
 
 	dtotal = 0;
 	dfree = 0;
-	sfs = NULL;
+	svfs = NULL;
 	res = -1;
 
 	nmounts = getvfsstat(NULL, 0, MNT_WAIT);
 	if (nmounts == -1)
 		goto fail;
-	sfs = calloc(nmounts, sizeof(*sfs));
-	if (sfs == NULL)
+	svfs = calloc(nmounts, sizeof(*svfs));
+	if (svfs == NULL)
 		goto fail;
-	nmounts = getvfsstat(sfs, nmounts * sizeof(*sfs), MNT_WAIT);
+	nmounts = getvfsstat(svfs, nmounts * sizeof(*svfs), MNT_WAIT);
 	if (nmounts == -1)
 		goto fail;
 
 	for (i = 0; i < nmounts; i++) {
-		sf = &sfs[i];
-		if ((sf->f_flag & MNT_LOCAL) != MNT_LOCAL)
+		svf = &svfs[i];
+		if ((svf->f_flag & MNT_LOCAL) != MNT_LOCAL)
 			continue;
-		dtotal += sf->f_blocks * sf->f_bsize;
-		dfree += sf->f_bfree * sf->f_bsize;
+		dtotal += svf->f_blocks * svf->f_bsize;
+		dfree += svf->f_bfree * svf->f_bsize;
 	}
 
 	di->total = dtotal / 1000;
@@ -135,6 +135,6 @@ int32_t get_disk_info_bsd(DiskInfo *di) {
 	res = 0;
 
 fail:
-	free(sfs);
+	free(svfs);
 	return (res);
 }
