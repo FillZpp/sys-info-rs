@@ -3,7 +3,7 @@
 #include <string.h>
 #include <windows.h>
 #include <psapi.h>
-#include <powerbase.h>
+#include <powrprof.h>
 
 #include "info.h"
 
