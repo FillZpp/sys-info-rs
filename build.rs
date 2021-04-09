@@ -15,9 +15,13 @@ fn main() {
         }
         "darwin" | "ios" => builder.file("c/macos.c"),
         "windows" => {
+            // GCC linker (ld.exe) wants system libs specified after the source file.
+            // MSVC linker (link.exe) doesn't seem to care.
+            builder.file("c/windows.c")
+                   .compile("info");
             println!("cargo:rustc-flags=-l psapi");
             println!("cargo:rustc-flags=-l powrprof");
-            builder.file("c/windows.c")
+            return;
         },
         "freebsd" => {
             println!("cargo:rustc-flags=-l pthread");
