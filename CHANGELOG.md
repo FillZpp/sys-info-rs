@@ -1,5 +1,12 @@
 # ChangeLog
 
+## 0.9.0
+
+- Typo fixes & test fixup
+- macOS: On failure copy the unknown value and null-terminate it correctly
+- Fix windows-gnu build
+- Support for NetBSD platform
+
 ## 0.8.0
 
 - Fix build for target android
