@@ -117,6 +117,9 @@ MemInfo get_mem_info(void) {
 		mi.buffers = 0;
 		mi.swap_total = (stat.ullTotalPageFile - stat.ullTotalPhys) / 1024;
 		mi.swap_free = (stat.ullAvailPageFile - stat.ullAvailPhys) / 1024;
+		if (mi.swap_free > mi.swap_total) {
+			mi.swap_free = mi.swap_total;
+		}
 	} else {
 		memset(&mi, 0, sizeof(mi));
 	}
