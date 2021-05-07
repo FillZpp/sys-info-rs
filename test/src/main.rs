@@ -1,10 +1,8 @@
-
 extern crate sys_info;
 
 use sys_info::*;
 
 fn main() {
-
     println!("os: {} {}", os_type().unwrap(), os_release().unwrap());
     println!("cpu: {} cores, {} MHz", cpu_num().unwrap(), cpu_speed().unwrap());
     println!("proc total: {}", proc_total().unwrap());
@@ -26,4 +24,3 @@ fn main() {
     #[cfg(target_os = "linux")]
     println!("/etc/os-release: {:?}", linux_os_release().unwrap());
 }
-
