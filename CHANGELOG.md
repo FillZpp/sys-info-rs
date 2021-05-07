@@ -1,5 +1,21 @@
 # ChangeLog
 
+## 0.9.0
+
+- Typo fixes & test fixup
+- macOS: On failure copy the unknown value and null-terminate it correctly
+- Fix windows-gnu build
+- Support for NetBSD platform
+
+## 0.8.0
+
+- Fix build for target android
+- add OpenBSD support
+- Make get_cpu_speed arch-independent on windows
+- improve get_mem_info on macos
+- Make Disk Info Thread-Safe on Linux
+- Loop to find max CPU speed in Windows get_cpu_speed
+
 ## 0.7.0
 
 - FreeBSD port.

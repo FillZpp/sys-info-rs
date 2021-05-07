@@ -21,6 +21,6 @@ fn main() {
         let t = boottime().unwrap();
         println!("boottime {} sec, {} usec", t.tv_sec, t.tv_usec);
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     println!("/etc/os-release: {:?}", linux_os_release().unwrap());
 }

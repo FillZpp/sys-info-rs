@@ -3,8 +3,7 @@
 #include <string.h>
 #include <windows.h>
 #include <psapi.h>
-#include <winnt.h>
-#include <powerbase.h>
+#include <powrprof.h>
 
 #include "info.h"
 
@@ -59,14 +58,21 @@ typedef struct _PROCESSOR_POWER_INFORMATION
 	ULONG MhzLimit;
 	ULONG MaxIdleState;
 	ULONG CurrentIdleState;
-} PROCESSOR_POWER_INFORMATION, *PPROCESSOR_POWER_INFORMATION;
+} PROCESSOR_POWER_INFORMATION;
 
 unsigned long get_cpu_speed(void) {
 	unsigned int num = get_cpu_num();
-	PROCESSOR_POWER_INFORMATION *power_info = malloc(num * sizeof(PROCESSOR_POWER_INFORMATION));
+	unsigned int power_info_len = num * sizeof(PROCESSOR_POWER_INFORMATION);
+	PROCESSOR_POWER_INFORMATION *power_info = malloc(power_info_len);
 
-	CallNtPowerInformation(ProcessorInformation, NULL, 0, power_info, num * sizeof(PROCESSOR_POWER_INFORMATION));
-	unsigned int speed = power_info[0].MaxMhz;
+	CallNtPowerInformation(ProcessorInformation, NULL, 0, power_info, power_info_len);
+
+	unsigned int speed = 0;
+	for (unsigned int i = 0; i < num; i++) {
+		if (speed < power_info[i].MaxMhz) {
+			speed = power_info[i].MaxMhz;
+		}
+	}
 
 	free(power_info);
 	return speed;
