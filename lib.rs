@@ -358,7 +358,7 @@ extern "C" {
 
     #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")), any(unix, windows)))]
     fn get_cpu_num() -> u32;
-    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
     fn get_cpu_speed() -> u64;
 
     #[cfg(target_os = "windows")]
@@ -581,7 +581,7 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows"))]
     {
         unsafe { Ok(get_cpu_speed()) }
     }
@@ -593,7 +593,7 @@ pub fn cpu_speed() -> Result<u64, Error> {
 	    _ => Ok(res),
 	}
     }
-    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", target_os = "macos", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -880,7 +880,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(target_os = "ios"))]
+    #[cfg(not(all(target_vendor = "apple", target_arch = "aarch64")))]
     pub fn test_cpu_speed() {
         let speed = cpu_speed().unwrap();
         assert!(speed > 0);
