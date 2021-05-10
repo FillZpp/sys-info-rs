@@ -13,7 +13,7 @@ fn main() {
             println!("cargo:rustc-link-lib=kstat");
             return;
         }
-        "darwin" | "ios" => builder.file("c/macos.c"),
+        "darwin" | "ios" => builder.file("c/darwin.c"),
         "windows" => {
             // GCC linker (ld.exe) wants system libs specified after the source file.
             // MSVC linker (link.exe) doesn't seem to care.
