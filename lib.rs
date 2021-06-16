@@ -852,6 +852,9 @@ pub fn boottime() -> Result<timeval, Error> {
         bt.tv_sec = (now - start) as i64;
 	    return Ok(bt);
     }
+
+    #[warn(unreachable_code)]
+    Err(Error::UnsupportedSystem)
 }
 
 #[cfg(test)]
