@@ -41,7 +41,7 @@ const char *get_os_release(void) {
 	return (os_release);
 }
 
-uint64_t get_cpu_speed(void) {
+unsigned long get_cpu_speed(void) {
 	uint64_t tsc_freq;
 	size_t len;
 	int error;
@@ -54,7 +54,7 @@ uint64_t get_cpu_speed(void) {
 #else
 	tsc_freq = ONE_DECIMAL_K * ONE_DECIMAL_K * ONE_DECIMAL_K;
 #endif
-	return (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
+	return (unsigned long) (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
 }
 
 unsigned long get_proc_total(void) {
