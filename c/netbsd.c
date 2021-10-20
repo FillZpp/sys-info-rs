@@ -42,17 +42,17 @@ const char *get_os_release(void) {
 }
 
 unsigned long get_cpu_speed(void) {
+#if defined(__i386__) || defined(__amd64__)
 	uint64_t tsc_freq;
 	size_t len;
 	int error;
 
-#if defined(__i386__) || defined(__amd64__)
 	len = sizeof(tsc_freq);
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
 		return (0);
 #else
-	tsc_freq = ONE_DECIMAL_K * ONE_DECIMAL_K * ONE_DECIMAL_K;
+	uint64_t tsc_freq = ONE_DECIMAL_K * ONE_DECIMAL_K * ONE_DECIMAL_K;
 #endif
 	return (unsigned long) (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
 }
