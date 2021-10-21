@@ -51,10 +51,17 @@ unsigned long get_cpu_speed(void) {
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
 		return (0);
-#else
-	uint64_t tsc_freq = ONE_DECIMAL_K * ONE_DECIMAL_K * ONE_DECIMAL_K;
-#endif
 	return (unsigned long) (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
+#elif defined(__arm__) || defined(__aarch64__)
+	uint32_t tsc_freq;
+	size_t len = sizeof(tsc_freq);
+	int const result = sysctlbyname("machdep.cpu.frequency.current",
+					&tsc_freq, &len, NULL, 0);
+
+	return result == -1 ? ONE_DECIMAL_K : tsc_freq;
+#else
+	return ONE_DECIMAL_K;
+#endif
 }
 
 unsigned long get_proc_total(void) {
