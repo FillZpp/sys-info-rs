@@ -1,5 +1,13 @@
 # ChangeLog
 
+## 0.9.1
+
+- Fix iOS Support and CPU speed doesn't work on ARM64 Macs either.
+- Rust Nightly fix
+- Add a cast to allow building on ILP32 systems
+- Prevent free swap from getting larger than total swap
+- Fix compiler errors/warnings for NetBSD/arm
+
 ## 0.9.0
 
 - Typo fixes & test fixup
