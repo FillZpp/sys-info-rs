@@ -41,20 +41,27 @@ const char *get_os_release(void) {
 	return (os_release);
 }
 
-uint64_t get_cpu_speed(void) {
+unsigned long get_cpu_speed(void) {
+#if defined(__i386__) || defined(__amd64__)
 	uint64_t tsc_freq;
 	size_t len;
 	int error;
 
-#if defined(__i386__) || defined(__amd64__)
 	len = sizeof(tsc_freq);
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
 		return (0);
+	return (unsigned long) (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
+#elif defined(__arm__) || defined(__aarch64__)
+	uint32_t tsc_freq;
+	size_t len = sizeof(tsc_freq);
+	int const result = sysctlbyname("machdep.cpu.frequency.current",
+					&tsc_freq, &len, NULL, 0);
+
+	return result == -1 ? ONE_DECIMAL_K : tsc_freq;
 #else
-	tsc_freq = ONE_DECIMAL_K * ONE_DECIMAL_K * ONE_DECIMAL_K;
+	return ONE_DECIMAL_K;
 #endif
-	return (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
 }
 
 unsigned long get_proc_total(void) {
