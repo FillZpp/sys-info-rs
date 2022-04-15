@@ -13,7 +13,7 @@ use std::io::{self, Read};
 use std::fs::File;
 #[cfg(any(target_os = "windows", target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
 use std::os::raw::c_char;
-#[cfg(not(any(target_os = "windows", target_os = "linux")))]
+#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "haiku")))]
 use std::os::raw::{c_int, c_double};
 
 #[cfg(any(target_vendor = "apple", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
@@ -358,20 +358,20 @@ extern "C" {
 
     #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")), any(unix, windows)))]
     fn get_cpu_num() -> u32;
-    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
     fn get_cpu_speed() -> u64;
 
     #[cfg(target_os = "windows")]
     fn get_loadavg() -> LoadAvg;
-    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku"))]
     fn get_proc_total() -> u64;
 
-    #[cfg(any(target_vendor = "apple", target_os = "windows"))]
+    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "haiku"))]
     fn get_mem_info() -> MemInfo;
     #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
     fn get_mem_info_bsd(mi: &mut MemInfo) ->i32;
 
-    #[cfg(any(target_os = "linux", target_vendor = "apple", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "haiku"))]
     fn get_disk_info() -> DiskInfo;
     #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
     fn get_disk_info_bsd(di: &mut DiskInfo) -> i32;
@@ -414,7 +414,11 @@ pub fn os_type() -> Result<String, Error> {
     {
         Ok("netbsd".to_string())
     }
-    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(target_os = "haiku")]
+    {
+        Ok("haiku".to_string())
+    }
+    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -443,7 +447,7 @@ pub fn os_release() -> Result<String, Error> {
 	    }
 	}
     }
-    #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+    #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "haiku"))]
     {
         let release: Option<String> = unsafe {
             let mut name: libc::utsname = std::mem::zeroed();
@@ -459,7 +463,7 @@ pub fn os_release() -> Result<String, Error> {
             Some(release) => Ok(release),
         }
     }
-    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -581,7 +585,7 @@ pub fn cpu_speed() -> Result<u64, Error> {
             .map(|speed| speed as u64)
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows"))]
+    #[cfg(any(all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "haiku"))]
     {
         unsafe { Ok(get_cpu_speed()) }
     }
@@ -593,7 +597,7 @@ pub fn cpu_speed() -> Result<u64, Error> {
 	    _ => Ok(res),
 	}
     }
-    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "solaris", target_os = "illumos", target_os = "linux", all(target_vendor = "apple", not(any(target_arch = "aarch64", target_arch = "arm"))), target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -656,7 +660,7 @@ pub fn proc_total() -> Result<u64, Error> {
             .and_then(|val| val.parse::<u64>().ok())
             .ok_or(Error::Unknown)
     }
-    #[cfg(any(target_vendor = "apple", target_os = "windows"))]
+    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "haiku"))]
     {
         Ok(unsafe { get_proc_total() })
     }
@@ -668,7 +672,7 @@ pub fn proc_total() -> Result<u64, Error> {
 	    _ => Ok(res),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -738,7 +742,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
             swap_free: 0,
         });
     }
-    #[cfg(any(target_vendor = "apple", target_os = "windows"))]
+    #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "haiku"))]
     {
         Ok(unsafe { get_mem_info() })
     }
@@ -753,7 +757,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 	    _ => Err(Error::Unknown),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "linux", target_os = "solaris", target_os = "illumos", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -763,7 +767,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
 ///
 /// Notice, it just calculate current disk on Windows.
 pub fn disk_info() -> Result<DiskInfo, Error> {
-    #[cfg(any(target_os = "linux", target_vendor = "apple", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "haiku"))]
     {
         Ok(unsafe { get_disk_info() })
     }
@@ -777,7 +781,7 @@ pub fn disk_info() -> Result<DiskInfo, Error> {
 	    _ => Err(Error::Unknown),
 	}
     }
-    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")))]
+    #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
         Err(Error::UnsupportedSystem)
     }
@@ -851,6 +855,21 @@ pub fn boottime() -> Result<timeval, Error> {
         }
         bt.tv_sec = (now - start) as i64;
 	    return Ok(bt);
+    }
+
+    #[cfg(target_os = "haiku")]
+    {
+        unsafe {
+            let mut sysinfo: libc::system_info = std::mem::zeroed();
+            if libc::get_system_info(&mut sysinfo) == libc::B_OK {
+                let mut now: libc::time_t = 0;
+                libc::time(&mut now);
+                bt.tv_sec = now - (sysinfo.boot_time / 1000000);
+                bt.tv_usec = (sysinfo.boot_time % 1000000) as libc::suseconds_t;
+                return Ok(bt);
+            }
+        }
+        return Err(Error::IO(io::Error::last_os_error()));
     }
 
     #[warn(unreachable_code)]
