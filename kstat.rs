@@ -22,18 +22,17 @@ fn c(buf: &[u8]) -> &std::ffi::CStr {
     std::ffi::CStr::from_bytes_with_nul(buf).expect("invalid string constant")
 }
 
-
 mod wrapper {
-    use std::os::raw::c_int;
-    use std::os::raw::c_uint;
-    use std::os::raw::c_char;
-    use std::os::raw::c_uchar;
-    use std::os::raw::c_void;
-    use std::os::raw::c_long;
-    use std::os::raw::c_ulong;
-    use std::os::raw::c_longlong;
-    use std::ptr::{null, null_mut, NonNull};
     use std::ffi::CStr;
+    use std::os::raw::c_char;
+    use std::os::raw::c_int;
+    use std::os::raw::c_long;
+    use std::os::raw::c_longlong;
+    use std::os::raw::c_uchar;
+    use std::os::raw::c_uint;
+    use std::os::raw::c_ulong;
+    use std::os::raw::c_void;
+    use std::ptr::{null, null_mut, NonNull};
 
     const KSTAT_TYPE_NAMED: c_uchar = 1;
 
@@ -93,12 +92,14 @@ mod wrapper {
     extern "C" {
         fn kstat_open() -> *mut KstatCtl;
         fn kstat_close(kc: *mut KstatCtl) -> c_int;
-        fn kstat_lookup(kc: *mut KstatCtl, module: *const c_char,
-            instance: c_int, name: *const c_char) -> *mut Kstat;
-        fn kstat_read(kc: *mut KstatCtl, ksp: *mut Kstat, buf: *mut c_void)
-            -> c_int;
-        fn kstat_data_lookup(ksp: *mut Kstat, name: *const c_char)
-            -> *mut c_void;
+        fn kstat_lookup(
+            kc: *mut KstatCtl,
+            module: *const c_char,
+            instance: c_int,
+            name: *const c_char,
+        ) -> *mut Kstat;
+        fn kstat_read(kc: *mut KstatCtl, ksp: *mut Kstat, buf: *mut c_void) -> c_int;
+        fn kstat_data_lookup(ksp: *mut Kstat, name: *const c_char) -> *mut c_void;
     }
 
     /// Minimal wrapper around libkstat(3LIB) on illumos and Solaris systems.
@@ -130,9 +131,8 @@ mod wrapper {
 
         /// Call kstat_lookup(3KSTAT) and store the result, if there is a match.
         pub fn lookup(&mut self, module: Option<&CStr>, name: Option<&CStr>) {
-            self.ks = NonNull::new(unsafe {
-                kstat_lookup(self.kc.as_ptr(), cp(&module), -1, cp(&name))
-            });
+            self.ks =
+                NonNull::new(unsafe { kstat_lookup(self.kc.as_ptr(), cp(&module), -1, cp(&name)) });
 
             self.stepping = false;
         }
@@ -144,8 +144,9 @@ mod wrapper {
             if !self.stepping {
                 self.stepping = true;
             } else {
-                self.ks = self.ks.map_or(None,
-                    |ks| NonNull::new(unsafe { ks.as_ref() }.ks_next));
+                self.ks = self
+                    .ks
+                    .map_or(None, |ks| NonNull::new(unsafe { ks.as_ref() }.ks_next));
             }
 
             if self.ks.is_none() {
@@ -187,30 +188,26 @@ mod wrapper {
                 return None;
             }
 
-            NonNull::new(unsafe {
-                kstat_data_lookup(ksp, cp(&Some(statistic)))
-            }).map(|voidp| voidp.cast())
+            NonNull::new(unsafe { kstat_data_lookup(ksp, cp(&Some(statistic))) })
+                .map(|voidp| voidp.cast())
         }
 
         /// Look up a named kstat value and interpret it as a "long_t".
         pub fn data_long(&self, statistic: &CStr) -> Option<i64> {
-            self.data_value(statistic).map(|kn| unsafe {
-                kn.as_ref().value.l
-            } as i64)
+            self.data_value(statistic)
+                .map(|kn| unsafe { kn.as_ref().value.l } as i64)
         }
 
         /// Look up a named kstat value and interpret it as a "ulong_t".
         pub fn data_ulong(&self, statistic: &CStr) -> Option<u64> {
-            self.data_value(statistic).map(|kn| unsafe {
-                kn.as_ref().value.ul
-            } as u64)
+            self.data_value(statistic)
+                .map(|kn| unsafe { kn.as_ref().value.ul } as u64)
         }
 
         /// Look up a named kstat value and interpret it as a "uint32_t".
         pub fn data_u32(&self, statistic: &CStr) -> Option<u32> {
-            self.data_value(statistic).map(|kn| unsafe {
-                kn.as_ref().value.ui32
-            })
+            self.data_value(statistic)
+                .map(|kn| unsafe { kn.as_ref().value.ui32 })
         }
     }
 

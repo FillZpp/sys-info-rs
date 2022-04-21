@@ -17,25 +17,24 @@ fn main() {
         "windows" => {
             // GCC linker (ld.exe) wants system libs specified after the source file.
             // MSVC linker (link.exe) doesn't seem to care.
-            builder.file("c/windows.c")
-                   .compile("info");
+            builder.file("c/windows.c").compile("info");
             println!("cargo:rustc-flags=-l psapi");
             println!("cargo:rustc-flags=-l powrprof");
             return;
-        },
+        }
         "freebsd" => {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/freebsd.c")
-        },
+        }
         "openbsd" => {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/openbsd.c")
-        },
+        }
         "netbsd" => {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/netbsd.c")
-        },
-        _ => panic!("unsupported system: {}", target_os)
+        }
+        _ => panic!("unsupported system: {}", target_os),
     };
     builder.compile("info");
 }
