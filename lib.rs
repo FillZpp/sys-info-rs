@@ -853,7 +853,7 @@ pub fn boottime() -> Result<timeval, Error> {
 	    return Ok(bt);
     }
 
-    #[warn(unreachable_code)]
+    #[allow(unreachable_code)]
     Err(Error::UnsupportedSystem)
 }
 
