@@ -352,9 +352,9 @@ impl From<Box<dyn std::error::Error>> for Error {
 
 extern "C" {
     #[cfg(any(target_vendor = "apple", target_os = "windows"))]
-    fn get_os_type() -> *const i8;
+    fn get_os_type() -> *const c_char;
     #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
-    fn get_os_release() -> *const i8;
+    fn get_os_release() -> *const c_char;
 
     #[cfg(all(not(any(target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd")), any(unix, windows)))]
     fn get_cpu_num() -> u32;
@@ -369,7 +369,7 @@ extern "C" {
     #[cfg(any(target_vendor = "apple", target_os = "windows"))]
     fn get_mem_info() -> MemInfo;
     #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
-    fn get_mem_info_bsd(mi: &mut MemInfo) ->i32;
+    fn get_mem_info_bsd(mi: &mut MemInfo) -> i32;
 
     #[cfg(any(target_os = "linux", target_vendor = "apple", target_os = "windows"))]
     fn get_disk_info() -> DiskInfo;
@@ -391,7 +391,7 @@ pub fn os_type() -> Result<String, Error> {
     }
     #[cfg(any(target_vendor = "apple", target_os = "windows"))]
     {
-        let typ = unsafe { ffi::CStr::from_ptr(get_os_type() as *const c_char).to_bytes() };
+        let typ = unsafe { ffi::CStr::from_ptr(get_os_type()).to_bytes() };
         Ok(String::from_utf8_lossy(typ).into_owned())
     }
     #[cfg(target_os = "solaris")]
@@ -434,7 +434,7 @@ pub fn os_release() -> Result<String, Error> {
     #[cfg(any(target_vendor = "apple", target_os = "windows", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
     {
         unsafe {
-	    let rp = get_os_release() as *const c_char;
+	    let rp = get_os_release();
 	    if rp == std::ptr::null() {
 		Err(Error::Unknown)
 	    } else {

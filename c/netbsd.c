@@ -41,7 +41,7 @@ const char *get_os_release(void) {
 	return (os_release);
 }
 
-unsigned long get_cpu_speed(void) {
+uint64_t get_cpu_speed(void) {
 #if defined(__i386__) || defined(__amd64__)
 	uint64_t tsc_freq;
 	size_t len;
@@ -51,7 +51,7 @@ unsigned long get_cpu_speed(void) {
 	error = sysctlbyname("machdep.tsc_freq", &tsc_freq, &len, NULL, 0);
 	if (error == -1)
 		return (0);
-	return (unsigned long) (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
+	return (tsc_freq / ONE_DECIMAL_K / ONE_DECIMAL_K);
 #elif defined(__arm__) || defined(__aarch64__)
 	uint32_t tsc_freq;
 	size_t len = sizeof(tsc_freq);
@@ -64,9 +64,9 @@ unsigned long get_cpu_speed(void) {
 #endif
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
 	char errbuf[_POSIX2_LINE_MAX];
-        int count;
+	int count;
 	kvm_t *kd;
 	struct kinfo_proc *kp;
 
@@ -80,7 +80,7 @@ unsigned long get_proc_total(void) {
 
 	kvm_close(kd);
 	free(kp);
-	return (unsigned long) (count);
+	return (count);
 }
 
 int32_t get_mem_info_bsd(struct MemInfo *mi) {

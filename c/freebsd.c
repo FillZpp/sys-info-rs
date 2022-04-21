@@ -46,7 +46,8 @@ uint64_t get_cpu_speed(void) {
 
 uint64_t get_proc_total(void) {
 	struct kinfo_proc *kp, *kpp;
-	int mib[3], count, error;
+	int mib[3], error;
+	uint64_t count;
 	size_t len;
 
 	mib[0] = CTL_KERN;

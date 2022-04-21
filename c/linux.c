@@ -37,7 +37,7 @@ const char *get_os_release(void) {
 	return "";
 }
 
-unsigned int get_cpu_num(void) {
+uint32_t get_cpu_num(void) {
 	return get_nprocs();
 }
 
@@ -47,7 +47,7 @@ unsigned int get_cpu_num(void) {
   /sys/devices/system/cpu/cpu0
 */
 
-unsigned long get_cpu_speed(void) {
+uint64_t get_cpu_speed(void) {
     return 0;
 }
 
@@ -61,7 +61,7 @@ LoadAvg get_loadavg(void) {
     return avg;
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
     return 0;
 }
 
