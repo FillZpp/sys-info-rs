@@ -32,6 +32,7 @@ fn main() {
             builder.file("c/openbsd.c")
         },
         "netbsd" => {
+            println!("cargo:rustc-flags=-l kvm");
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/netbsd.c")
         },
