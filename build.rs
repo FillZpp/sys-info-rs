@@ -35,6 +35,9 @@ fn main() {
             println!("cargo:rustc-flags=-l pthread");
             builder.file("c/netbsd.c")
         },
+	"haiku" => {
+	    builder.file("c/haiku.c")
+	},
         _ => panic!("unsupported system: {}", target_os)
     };
     builder.compile("info");
