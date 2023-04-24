@@ -66,7 +66,7 @@ const char *get_os_release(void) {
 	return buf;
 }
 
-unsigned int get_cpu_num(void) {
+uint32_t get_cpu_num(void) {
 	unsigned int num;
 	int mib[2];
 	size_t len;
@@ -81,7 +81,7 @@ unsigned int get_cpu_num(void) {
 	return num;
 }
 
-unsigned long get_cpu_speed(void) {
+uint64_t get_cpu_speed(void) {
 	unsigned long speed;
 	size_t len;
 
@@ -92,7 +92,7 @@ unsigned long get_cpu_speed(void) {
 	return speed;
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
 	int mib[3];
 	size_t len;
 

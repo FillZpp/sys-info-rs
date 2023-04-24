@@ -28,7 +28,7 @@ const char *get_os_release(void) {
 	return (os_release);
 }
 
-unsigned long get_cpu_speed(void) {
+uint64_t get_cpu_speed(void) {
 	unsigned int mhz;
 	int mib[2], error;
 	size_t len;
@@ -43,7 +43,7 @@ unsigned long get_cpu_speed(void) {
 	return mhz;
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
 	struct kinfo_proc *kp, *kpp;
 	int mib[6], count, error;
 	size_t len;

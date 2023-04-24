@@ -37,7 +37,7 @@ const char *get_os_release(void) {
 	return s;
 }
 
-unsigned int get_cpu_num(void) {
+uint32_t get_cpu_num(void) {
 	unsigned int num;
 	SYSTEM_INFO sys_info;
 
@@ -60,14 +60,17 @@ typedef struct _PROCESSOR_POWER_INFORMATION
 	ULONG CurrentIdleState;
 } PROCESSOR_POWER_INFORMATION;
 
-unsigned long get_cpu_speed(void) {
-	unsigned int num = get_cpu_num();
-	unsigned int power_info_len = num * sizeof(PROCESSOR_POWER_INFORMATION);
+uint64_t get_cpu_speed(void) {
+	uint32_t num = get_cpu_num();
+	size_t power_info_len = num * sizeof(PROCESSOR_POWER_INFORMATION);
 	PROCESSOR_POWER_INFORMATION *power_info = malloc(power_info_len);
+	if (power_info == NULL)	{
+		return 0;
+	}
 
 	CallNtPowerInformation(ProcessorInformation, NULL, 0, power_info, power_info_len);
 
-	unsigned int speed = 0;
+	ULONG speed = 0;
 	for (unsigned int i = 0; i < num; i++) {
 		if (speed < power_info[i].MaxMhz) {
 			speed = power_info[i].MaxMhz;
@@ -93,13 +96,13 @@ LoadAvg get_loadavg(void) {
 	return la;
 }
 
-unsigned long get_proc_total(void) {
+uint64_t get_proc_total(void) {
 	DWORD aprocesses[MAXPROCESSES], cb_needed, cprocesses;
 
 	if (!EnumProcesses(aprocesses, sizeof(aprocesses), &cb_needed))
 		cprocesses = 0;
 	else
-		cprocesses = cb_needed / sizeof(unsigned long);
+		cprocesses = cb_needed / sizeof(DWORD);
 	return cprocesses;
 }
 
