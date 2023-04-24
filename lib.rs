@@ -281,6 +281,16 @@ pub struct DiskInfo {
     pub free: u64,
 }
 
+#[cfg(target_family = "unix")]
+mod uname;
+#[cfg(target_family = "unix")]
+pub use uname::Info as UnameInfo;
+
+#[cfg(not(target_family = "unix"))]
+mod non_unix_uname;
+#[cfg(not(target_family = "unix"))]
+pub use non_unix_uname::Info as UnameInfo;
+
 /// Error types
 #[derive(Debug)]
 pub enum Error {
@@ -377,6 +387,11 @@ extern "C" {
     fn get_disk_info_bsd(di: &mut DiskInfo) -> i32;
 }
 
+/// Returns the result of the unix `uname` syscall or, on non-unix systems, a similar
+/// data-structure.
+pub fn uname() -> Result<UnameInfo, Error> {
+    UnameInfo::new()
+}
 
 /// Get operation system type.
 ///
@@ -449,19 +464,7 @@ pub fn os_release() -> Result<String, Error> {
     }
     #[cfg(any(target_os = "solaris", target_os = "illumos", target_os = "haiku"))]
     {
-        let release: Option<String> = unsafe {
-            let mut name: libc::utsname = std::mem::zeroed();
-            if libc::uname(&mut name) < 0 {
-                None
-            } else {
-                let cstr = std::ffi::CStr::from_ptr(name.release.as_mut_ptr());
-                Some(cstr.to_string_lossy().to_string())
-            }
-        };
-        match release {
-            None => Err(Error::Unknown),
-            Some(release) => Ok(release),
-        }
+        Ok(uname()?.release()?.to_string())
     }
     #[cfg(not(any(target_os = "linux", target_vendor = "apple", target_os = "windows", target_os = "solaris", target_os = "illumos", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "haiku")))]
     {
@@ -956,5 +959,36 @@ mod test {
     pub fn test_linux_os_release() {
         let os_release = linux_os_release().unwrap();
         println!("linux_os_release(): {:?}", os_release.name)
+    }
+
+    #[test]
+    pub fn test_uname() {
+        let uname = uname().unwrap();
+        println!("uname:
+            sysname: {}
+            nodename: {}
+            release: {}
+            version: {}",
+            uname.sysname().unwrap(),
+            uname.nodename().unwrap(),
+            uname.release().unwrap(),
+            uname.version().unwrap(),
+        );
+        assert!(uname.release().unwrap() == uname.release().unwrap());
+        #[cfg(target_os = "Linux")]
+        assert!(uname.sysname().unwrap() == "Linux");
+        #[cfg(target_family = "unix")]
+        println!("        machine: {}",
+            uname.machine().unwrap(),
+        );
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "fuchsia",
+            target_os = "redox"
+        ))]
+        println!("        domainname: {}",
+            uname.domainname().unwrap(),
+        );
     }
 }
