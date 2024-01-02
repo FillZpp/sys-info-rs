@@ -876,6 +876,200 @@ pub fn boottime() -> Result<timeval, Error> {
     Err(Error::UnsupportedSystem)
 }
 
+#[cfg(target_os = "windows")]
+#[derive(Debug)]
+pub struct WindowsGraphicsCard {
+    pub name: Vec<String>,
+    pub description: Vec<String>,
+    pub caption: Vec<String>,
+    pub status: Vec<String>,
+    pub status_info: Vec<String>,
+    pub availability: Vec<String>,
+    pub driver_version: Vec<String>,
+    pub adapter_ram: Vec<String>,
+    pub adapter_dac_type: Vec<String>,
+    pub current_refresh_rate: Vec<String>,
+    pub max_refresh_rate: Vec<String>,
+    pub min_refresh_rate: Vec<String>,
+    pub current_bits_per_pixel: Vec<String>,
+    pub current_horizontal_resolution: Vec<String>,
+    pub current_vertical_resolution: Vec<String>,
+    pub current_number_of_colors: Vec<String>,
+    pub current_number_of_columns: Vec<String>,
+    pub current_number_of_rows: Vec<String>,
+    pub current_scan_mode: Vec<String>,
+    pub device_id: Vec<String>,
+    pub dither_type: Vec<String>,
+    pub driver_date: Vec<String>,
+    pub icm_intent: Vec<String>,
+    pub icm_method: Vec<String>,
+    pub inf_file_name: Vec<String>,
+    pub inf_section: Vec<String>,
+    pub install_date: Vec<String>,
+    pub installed_display_drivers: Vec<String>,
+    pub max_memory_supported: Vec<String>,
+    pub max_number_controlled: Vec<String>,
+    pub monochrome: Vec<String>,
+    pub number_of_color_planes: Vec<String>,
+    pub number_of_video_pages: Vec<String>,
+    pub pnp_device_id: Vec<String>,
+    pub power_management_capabilities: Vec<String>,
+    pub power_management_supported: Vec<String>,
+    pub protocol_supported: Vec<String>,
+    pub reserved_system_palette_entries: Vec<String>,
+    pub specification_version: Vec<String>,
+    pub system_creation_classname: Vec<String>,
+    pub system_name: Vec<String>,
+    pub system_palette_entries: Vec<String>,
+    pub time_of_last_reset: Vec<String>,
+    pub video_architecture: Vec<String>,
+    pub video_memory_type: Vec<String>,
+    pub video_mode: Vec<String>,
+    pub video_mode_description: Vec<String>,
+    pub video_processor: Vec<String>,
+    pub accelerator_capabilities: Vec<String>,
+    pub capability_descriptions: Vec<String>,
+    pub color_table_entries: Vec<String>,
+    pub config_manager_error_code: Vec<String>,
+    pub config_manager_user_config: Vec<String>,
+    pub creation_classname: Vec<String>
+}
+#[cfg(target_os = "windows")]
+pub fn get_graphics_info() -> WindowsGraphicsCard {
+    use std::process::{Command, Output};
+    use std::str;
+
+    let name = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("name").output().unwrap();
+    let driver_version = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("driverversion").output().unwrap();
+    let adapter_ram = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("adapterram").output().unwrap();
+    let video_mode_description = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("VideoModeDescription").output().unwrap();
+    let current_refresh_rate = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentRefreshRate").output().unwrap();
+    let current_bits_per_pixel = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentBitsPerPixel").output().unwrap();
+    let current_number_of_colors = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentNumberOfColors").output().unwrap();
+    let current_number_of_columns = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentNumberOfColumns").output().unwrap();
+    let current_number_of_rows = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentNumberOfRows").output().unwrap();
+    let current_horizontal_resolution = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentHorizontalResolution").output().unwrap();
+    let current_vertical_resolution = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentVerticalResolution").output().unwrap();
+    let current_scan_mode = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CurrentScanMode").output().unwrap();
+    let device_id = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("DeviceID").output().unwrap();
+    let dither_type = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("DitherType").output().unwrap();
+    let driver_date = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("DriverDate").output().unwrap();
+    let icm_intent = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ICMIntent").output().unwrap();
+    let icm_method = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ICMMethod").output().unwrap();
+    let inf_file_name = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("InfFilename").output().unwrap();
+    let inf_section = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("InfSection").output().unwrap();
+    let install_date = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("InstallDate").output().unwrap();
+    let installed_display_drivers = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("InstalledDisplayDrivers").output().unwrap();
+    let max_memory_supported = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("MaxMemorySupported").output().unwrap();
+    let max_number_controlled = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("MaxNumberControlled").output().unwrap();
+    let max_refresh_rate = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("MaxRefreshRate").output().unwrap();
+    let min_refresh_rate = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("MinRefreshRate").output().unwrap();
+    let monochrome = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("Monochrome").output().unwrap();
+    let number_of_color_planes = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("NumberOfColorPlanes").output().unwrap();
+    let number_of_video_pages = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("NumberOfVideoPages").output().unwrap();
+    let pnp_device_id = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("PNPDeviceID").output().unwrap();
+    let power_management_capabilities = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("PowerManagementCapabilities").output().unwrap();
+    let power_management_supported = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("PowerManagementSupported").output().unwrap();
+    let description = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("Description").output().unwrap();
+    let protocol_supported = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ProtocolSupported").output().unwrap();
+    let reserved_system_palette_entries = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ReservedSystemPaletteEntries").output().unwrap();
+    let specification_version = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("SpecificationVersion").output().unwrap();
+    let status = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("Status").output().unwrap();
+    let status_info = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("StatusInfo").output().unwrap();
+    let system_creation_classname = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("SystemCreationClassName").output().unwrap();
+    let system_name = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("SystemName").output().unwrap();
+    let system_palette_entries = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("SystemPaletteEntries").output().unwrap();
+    let time_of_last_reset = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("TimeOfLastReset").output().unwrap();
+    let video_architecture = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("VideoArchitecture").output().unwrap();
+    let video_memory_type = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("VideoMemoryType").output().unwrap();
+    let video_mode = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("VideoMode").output().unwrap();
+    let video_processor = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("VideoProcessor").output().unwrap();
+    let accelerator_capabilities = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("AcceleratorCapabilities").output().unwrap();
+    let adapter_dac_type = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("AdapterDACType").output().unwrap();
+    let availability = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("Availability").output().unwrap();
+    let capability_descriptions = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CapabilityDescriptions").output().unwrap();
+    let caption = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("Caption").output().unwrap();
+    let color_table_entries = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ColorTableEntries").output().unwrap();
+    let config_manager_error_code = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ConfigManagerErrorCode").output().unwrap();
+    let config_manager_user_config = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("ConfigManagerUserConfig").output().unwrap();
+    let creation_classname = Command::new("wmic").arg("path").arg("win32_VideoController").arg("get").arg("CreationClassName").output().unwrap();
+
+    fn windows_outputs_cleanup(output: Output) -> Vec<String> {
+        let parse_output = str::from_utf8(&output.stdout).unwrap();
+
+        let mut new_string_array = vec![];
+
+        for (index, line) in parse_output.lines().enumerate() {
+            if index != 0 && line != "" {
+                let line = line.replace("\r", "").trim().to_string();
+
+                if line != "".to_string() {
+                    new_string_array.push(line.to_string())
+                }
+            }
+        }
+
+        return new_string_array;
+    }
+
+    WindowsGraphicsCard {
+        accelerator_capabilities: windows_outputs_cleanup(accelerator_capabilities),
+        name: windows_outputs_cleanup(name), 
+        description: windows_outputs_cleanup(description),
+        caption: windows_outputs_cleanup(caption),
+        driver_version: windows_outputs_cleanup(driver_version), 
+        availability: windows_outputs_cleanup(availability),
+        adapter_ram: windows_outputs_cleanup(adapter_ram),
+        adapter_dac_type: windows_outputs_cleanup(adapter_dac_type),  
+        current_refresh_rate: windows_outputs_cleanup(current_refresh_rate),
+        max_refresh_rate: windows_outputs_cleanup(max_refresh_rate),
+        min_refresh_rate: windows_outputs_cleanup(min_refresh_rate),
+        current_bits_per_pixel: windows_outputs_cleanup(current_bits_per_pixel), 
+        current_number_of_colors: windows_outputs_cleanup(current_number_of_colors), 
+        current_number_of_columns: windows_outputs_cleanup(current_number_of_columns), 
+        current_number_of_rows: windows_outputs_cleanup(current_number_of_rows), 
+        current_horizontal_resolution: windows_outputs_cleanup(current_horizontal_resolution),
+        current_vertical_resolution: windows_outputs_cleanup(current_vertical_resolution),
+        current_scan_mode: windows_outputs_cleanup(current_scan_mode),
+        device_id: windows_outputs_cleanup(device_id),
+        dither_type: windows_outputs_cleanup(dither_type),
+        driver_date: windows_outputs_cleanup(driver_date),
+        icm_intent: windows_outputs_cleanup(icm_intent),
+        icm_method: windows_outputs_cleanup(icm_method),
+        inf_file_name: windows_outputs_cleanup(inf_file_name),
+        inf_section: windows_outputs_cleanup(inf_section),
+        install_date: windows_outputs_cleanup(install_date),
+        installed_display_drivers: windows_outputs_cleanup(installed_display_drivers),
+        max_memory_supported: windows_outputs_cleanup(max_memory_supported),
+        max_number_controlled: windows_outputs_cleanup(max_number_controlled),
+        monochrome: windows_outputs_cleanup(monochrome),
+        number_of_color_planes: windows_outputs_cleanup(number_of_color_planes),
+        number_of_video_pages: windows_outputs_cleanup(number_of_video_pages),
+        pnp_device_id: windows_outputs_cleanup(pnp_device_id),
+        power_management_capabilities: windows_outputs_cleanup(power_management_capabilities),
+        power_management_supported: windows_outputs_cleanup(power_management_supported),
+        protocol_supported: windows_outputs_cleanup(protocol_supported),
+        reserved_system_palette_entries: windows_outputs_cleanup(reserved_system_palette_entries),
+        specification_version: windows_outputs_cleanup(specification_version),
+        status: windows_outputs_cleanup(status),
+        status_info: windows_outputs_cleanup(status_info),
+        system_creation_classname: windows_outputs_cleanup(system_creation_classname),
+        system_name: windows_outputs_cleanup(system_name),
+        system_palette_entries: windows_outputs_cleanup(system_palette_entries),
+        time_of_last_reset: windows_outputs_cleanup(time_of_last_reset),
+        video_architecture: windows_outputs_cleanup(video_architecture),
+        video_memory_type: windows_outputs_cleanup(video_memory_type),
+        video_mode: windows_outputs_cleanup(video_mode),
+        video_mode_description: windows_outputs_cleanup(video_mode_description),
+        video_processor: windows_outputs_cleanup(video_processor),
+        capability_descriptions: windows_outputs_cleanup(capability_descriptions),
+        color_table_entries: windows_outputs_cleanup(color_table_entries),
+        config_manager_error_code: windows_outputs_cleanup(config_manager_error_code),
+        config_manager_user_config: windows_outputs_cleanup(config_manager_user_config),
+        creation_classname: windows_outputs_cleanup(creation_classname)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -941,6 +1135,12 @@ mod test {
         let host = hostname().unwrap();
         assert!(host.len() > 0);
         println!("hostname(): {}", host);
+    }
+
+    #[test]
+    pub fn test_get_graphics_info(){
+        let graphics = get_graphics_info();
+        println!("Graphics info: {:?}", graphics);
     }
 
     #[test]
